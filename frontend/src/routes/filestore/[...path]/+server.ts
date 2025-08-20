@@ -1,7 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
-import type { RequestHandler } from "@sveltejs/kit";
-import { error } from "node:console";
+import { error, type RequestHandler } from "@sveltejs/kit";
 
 
 export const GET: RequestHandler = ({ url }) => {
@@ -12,6 +11,6 @@ export const GET: RequestHandler = ({ url }) => {
         return new Response(file);
     }
     catch {
-        error(404);
+        return error(404);
     }
 };

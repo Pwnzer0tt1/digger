@@ -28,30 +28,9 @@ diesel::table! {
 }
 
 diesel::table! {
-    anomaly (id) {
-        id -> Int4,
-        flow_id -> Int8,
-        timestamp -> Int8,
-        extra_data -> Nullable<Jsonb>,
-    }
-}
-
-diesel::table! {
-    app_event (id) {
-        id -> Int4,
-        flow_id -> Int8,
-        timestamp -> Int8,
-        app_proto -> Text,
-        extra_data -> Nullable<Jsonb>,
-    }
-}
-
-diesel::table! {
-    fileinfo (id) {
-        id -> Int4,
-        flow_id -> Int8,
-        timestamp -> Int8,
-        extra_data -> Nullable<Jsonb>,
+    filedata (sha256) {
+        sha256 -> Bytea,
+        blob -> Bytea,
     }
 }
 
@@ -66,10 +45,19 @@ diesel::table! {
         dest_ip -> Text,
         dest_port -> Nullable<Int4>,
         dest_ipport -> Nullable<Text>,
-        pcap_filename -> Nullable<Text>,
         proto -> Text,
         app_proto -> Nullable<Text>,
         metadata -> Nullable<Jsonb>,
+        extra_data -> Nullable<Jsonb>,
+    }
+}
+
+diesel::table! {
+    other_event (id) {
+        id -> Int4,
+        flow_id -> Int8,
+        timestamp -> Int8,
+        event_type -> Text,
         extra_data -> Nullable<Jsonb>,
     }
 }
@@ -87,9 +75,8 @@ diesel::table! {
 diesel::allow_tables_to_appear_in_same_query!(
     _prisma_migrations,
     alert,
-    anomaly,
-    app_event,
-    fileinfo,
+    filedata,
     flow,
+    other_event,
     raw,
 );

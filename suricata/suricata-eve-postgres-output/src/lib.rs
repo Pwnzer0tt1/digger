@@ -1,6 +1,3 @@
-// Copyright (C) 2024  ANSSI
-// SPDX-License-Identifier: GPL-2.0-or-later
-
 mod database;
 mod ffi;
 mod schema;
@@ -109,9 +106,9 @@ extern "C" fn plugin_init() {
     // don't log using `suricata` crate to reduce build time.
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
-    // Register new eve filetype, then we can use it with `eve-log.filetype=sqlite`
+    // Register new eve filetype, then we can use it with `eve-log.filetype=postgres`
     let file_type = ffi::SCEveFileType {
-        name: c"sqlite".as_ptr(),
+        name: c"postgres".as_ptr(),
         Init: output_init,
         ThreadInit: output_thread_init,
         Write: output_write,
@@ -129,9 +126,12 @@ extern "C" fn plugin_init() {
 #[no_mangle]
 extern "C" fn SCPluginRegister() -> *const ffi::SCPlugin {
     let plugin = ffi::SCPlugin {
+        version: ffi::SC_API_VERSION,
+        suricata_version: ffi::SC_PACKAGE_VERSION.as_ptr(),
         name: c"Eve PostgreSQL Output".as_ptr(),
-        license: c"GPL-2.0".as_ptr(),
-        author: c"ANSSI".as_ptr(),
+        plugin_version: c"0.1.0".as_ptr(),
+        license: c"GPL-3.0".as_ptr(),
+        author: c"Pwnzer0tt1".as_ptr(),
         Init: plugin_init,
     };
     Box::into_raw(Box::new(plugin))

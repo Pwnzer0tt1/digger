@@ -9,7 +9,6 @@ CREATE TABLE "flow" (
     "dest_ip" TEXT NOT NULL,
     "dest_port" INTEGER,
     "dest_ipport" TEXT,
-    "pcap_filename" TEXT,
     "proto" TEXT NOT NULL,
     "app_proto" TEXT,
     "metadata" JSONB,
@@ -19,34 +18,14 @@ CREATE TABLE "flow" (
 );
 
 -- CreateTable
-CREATE TABLE "fileinfo" (
+CREATE TABLE "other_event" (
     "id" SERIAL NOT NULL,
     "flow_id" BIGINT NOT NULL,
     "timestamp" BIGINT NOT NULL,
+    "event_type" TEXT NOT NULL,
     "extra_data" JSONB,
 
-    CONSTRAINT "fileinfo_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "app_event" (
-    "id" SERIAL NOT NULL,
-    "flow_id" BIGINT NOT NULL,
-    "timestamp" BIGINT NOT NULL,
-    "app_proto" TEXT NOT NULL,
-    "extra_data" JSONB,
-
-    CONSTRAINT "app_event_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "anomaly" (
-    "id" SERIAL NOT NULL,
-    "flow_id" BIGINT NOT NULL,
-    "timestamp" BIGINT NOT NULL,
-    "extra_data" JSONB,
-
-    CONSTRAINT "anomaly_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "other_event_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -72,6 +51,14 @@ CREATE TABLE "raw" (
     CONSTRAINT "raw_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "filedata" (
+    "sha256" BYTEA NOT NULL,
+    "blob" BYTEA NOT NULL,
+
+    CONSTRAINT "filedata_pkey" PRIMARY KEY ("sha256")
+);
+
 -- CreateIndex
 CREATE INDEX "flow_ts_start_idx" ON "flow"("ts_start");
 
@@ -85,22 +72,10 @@ CREATE INDEX "flow_src_ipport_idx" ON "flow"("src_ipport");
 CREATE INDEX "flow_dest_ipport_idx" ON "flow"("dest_ipport");
 
 -- CreateIndex
-CREATE INDEX "fileinfo_flow_id_idx" ON "fileinfo"("flow_id");
+CREATE INDEX "other_event_flow_id_idx" ON "other_event"("flow_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "fileinfo_flow_id_timestamp_key" ON "fileinfo"("flow_id", "timestamp");
-
--- CreateIndex
-CREATE INDEX "app_event_flow_id_idx" ON "app_event"("flow_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "app_event_flow_id_app_proto_timestamp_key" ON "app_event"("flow_id", "app_proto", "timestamp");
-
--- CreateIndex
-CREATE INDEX "anomaly_flow_id_idx" ON "anomaly"("flow_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "anomaly_flow_id_timestamp_key" ON "anomaly"("flow_id", "timestamp");
+CREATE UNIQUE INDEX "other_event_flow_id_event_type_timestamp_key" ON "other_event"("flow_id", "event_type", "timestamp");
 
 -- CreateIndex
 CREATE INDEX "alert_tag_idx" ON "alert"("tag");
@@ -116,3 +91,24 @@ CREATE INDEX "raw_flow_id_idx" ON "raw"("flow_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "raw_flow_id_count_key" ON "raw"("flow_id", "count");
+
+-- Because Prisma Schema doesn't fully support generated columns raw SQL queries must be used.
+-- PostgreSQL generated columns require immutable values which is not guaranteed by timestamp function.
+
+CREATE FUNCTION set_ts_fn() RETURNS trigger AS $$
+BEGIN
+	UPDATE flow SET src_ipport = src_ip || (CASE WHEN src_port IS NULL THEN '' ELSE ':' || src_port END);
+	UPDATE flow SET dest_ipport = dest_ip || (CASE WHEN dest_port IS NULL THEN '' ELSE ':' || dest_port END);
+
+	RETURN new;
+END
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER set_ts AFTER INSERT ON flow FOR each ROW EXECUTE PROCEDURE set_ts_fn();
+
+
+ALTER TABLE alert DROP COLUMN tag;
+ALTER TABLE alert ADD COLUMN tag TEXT GENERATED ALWAYS AS (extra_data#>>'{metadata, tag, 0}') STORED;
+
+ALTER TABLE alert DROP COLUMN color;
+ALTER TABLE alert ADD COLUMN color TEXT GENERATED ALWAYS AS (extra_data#>>'{metadata, color, 0}') STORED;

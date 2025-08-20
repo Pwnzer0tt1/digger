@@ -45,16 +45,15 @@
         let json: {
             flow: Flow,
             fileinfo?: {
-                extra_data: {
-                    gaps: boolean,
-                    size: number,
-                    state: string,
-                    tx_id: number,
-                    sha256: string,
-                    stored: boolean,
-                    file_id: number,
-                    filename: string
-                }
+                gaps: boolean,
+                size: number,
+                state: string,
+                tx_id: number,
+                sha256: string,
+                stored: boolean,
+                file_id: number,
+                filename: string,
+                magic?: string
             }[],
             alert?: {
                 extra_data: {
@@ -87,6 +86,7 @@
             rdp?: any,
             rfb?: any
         } = await res.json();
+        console.log(json);
 
         const dateStart = json.flow.extra_data?.start.split("T").join(", ");
         const dateEnd = json.flow.extra_data?.end.split("T").join(", ");
@@ -115,10 +115,9 @@
                     sha256: string
                 }[] = [];
                 if (json.fileinfo) {
-                    let fileinfo = json.fileinfo.map((x: any) => x.extra_data);
-                    for (const d of Object.values(fileinfo)) {
+                    for (const d of json.fileinfo) {
                         if (d.tx_id === Number(txId)) {
-                            let f = await fetch(`/filestore/${d.sha256.slice(0, 2)}/${d.sha256}`);
+                            let f = await fetch(`/api/filedata/${d.sha256}`);
                             let ext = getExtFromMagic(d.magic ?? "");
                             let blob = await f.clone().blob();
                             let bytes = await f.bytes();
@@ -126,7 +125,7 @@
                                 data: blob,
                                 ext,
                                 filename: d.filename,
-                                filestore: `/filestore/${d.sha256.slice(0, 2)}/${d.sha256}`,
+                                filestore: `/api/filedata/${d.sha256}`,
                                 magic: d.magic ?? "",
                                 bytes,
                                 sha256: d.sha256
@@ -139,27 +138,14 @@
         }
 
         return {
-            flowId: json.flow.id,
             flow: json.flow,
             dateStart,
             dateEnd,
             tick,
-            proto: json.flow.proto,
-            appProto: json.flow.app_proto,
-            flowEstablished: json.flow.extra_data ? json.flow.extra_data.state !== "new" : undefined,
-            srcIpPort: json.flow.src_ipport,
-            dstPort: json.flow.dest_port,
-            dstIpPort: json.flow.dest_ipport,
-            pktsToServer: json.flow.extra_data ? json.flow.extra_data.pkts_toserver : undefined,
-            pktsToClient: json.flow.extra_data ? json.flow.extra_data.pkts_toclient : undefined,
-            bytesToServer: json.flow.extra_data ? json.flow.extra_data.bytes_toserver : undefined,
-            bytesToClient: json.flow.extra_data ? json.flow.extra_data.bytes_toclient : undefined,
-            metadata: json.flow.metadata,
             alerts: json.alert,
             anomalies: json.anomaly,
             flowAppProto: json[json.flow.app_proto],
-            fileinfos,
-            pcapFilename: json.flow.pcap_filename
+            fileinfos
         };
     });
 
@@ -213,6 +199,7 @@
 {#await flowData}
     Loading...
 {:then flowData}
+    {@debug flowData}
     <div class="vstack gap-3">
         <!-- Flow card -->
         <div class="hstack gap-2 align-items-stretch">
@@ -222,9 +209,9 @@
                 <p class="my-0">to {flowData.dateEnd}</p>
             </div>
             <div class="flex-grow-1 card p-2 border-secondary shadow-lg">
-                <p class="my-0">{flowData.proto} flow from {flowData.srcIpPort} to {flowData.dstIpPort}</p>
-                <p class="my-0"><i class="bi bi-arrow-right"></i> {flowData.pktsToServer} packets ({flowData.bytesToServer} bytes)</p>
-                <p class="my-0"><i class="bi bi-arrow-left"></i> {flowData.pktsToClient} packets ({flowData.bytesToClient} bytes)</p>
+                <p class="my-0">{flowData.flow.proto} flow from {flowData.flow.src_ipport} to {flowData.flow.dest_ipport}</p>
+                <p class="my-0"><i class="bi bi-arrow-right"></i> {flowData.flow.extra_data.pkts_toserver} packets ({flowData.flow.extra_data.bytes_toserver} bytes)</p>
+                <p class="my-0"><i class="bi bi-arrow-left"></i> {flowData.flow.extra_data.pkts_toclient} packets ({flowData.flow.extra_data.bytes_toclient} bytes)</p>
             </div>
             <div class="d-flex align-items-stretch">
                 <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
@@ -235,26 +222,24 @@
                             <i class="bi bi-fullscreen"></i>
                         {/if}
                     </button>
-                    <a href={flowData.pcapFilename.slice(1, -1)} download={flowData.pcapFilename.slice(1, -1).split("/")[2]} class="btn btn-success shadow-lg" aria-label="Download pcap"><i class="bi bi-file-earmark-arrow-down-fill"></i></a>
+                    <a href="/api/flow/{flowData.flow.id}/pcap" download="{flowData.flow.id}.lz4" class="btn btn-success shadow-lg" aria-label="Download pcap"><i class="bi bi-file-earmark-arrow-down-fill"></i></a>
                 </div>
             </div>
         </div>
 
         <!-- Alerts -->
         {#if flowData.alerts}
-            {#if flowData.alerts.length > 0}
-                <div class="vstack gap-3">
-                    {#each flowData.alerts as a}
-                        {#if a.extra_data.signature !== "tag"}
-                            <div class="card p-2 border-{a.color} shadow-lg">{a.extra_data.signature}</div>
-                        {/if}
-                    {/each}
-                </div>
-            {/if}
+            <div class="vstack gap-3">
+                {#each flowData.alerts as a}
+                    {#if a.extra_data.signature !== "tag"}
+                        <div class="card p-2 border-{a.color} shadow-lg">{a.extra_data.signature}</div>
+                    {/if}
+                {/each}
+            </div>
         {/if}
 
         <!-- Anomalies -->
-        {#if flowData.anomalies.length > 0}
+        {#if flowData.anomalies}
             <div class="vstack gap-3">
                 {#each flowData.anomalies as anomaly}
                     <div class="card p-2 border-warning shadow-lg">Dissection anomaly: {JSON.stringify(anomaly)}</div>
@@ -263,11 +248,11 @@
         {/if}
 
         <!-- App data -->
-        {#if flowData.appProto && flowData.appProto !== "failed"}
+        {#if flowData.flow.app_proto && flowData.flow.app_proto !== "failed"}
             <div class="accordion" id="accordion-app">
                 <div class="accordion-item border-success shadow-lg">
                     <h2 class="accordion-header">
-                        <button class="accordion-button bg-body-tertiary text-body-emphasis" type="button" data-bs-toggle="collapse" data-bs-target="#display-app" aria-expanded="true" aria-controls="display-app">{flowData.appProto}</button>
+                        <button class="accordion-button bg-body-tertiary text-body-emphasis" type="button" data-bs-toggle="collapse" data-bs-target="#display-app" aria-expanded="true" aria-controls="display-app">{flowData.flow.app_proto}</button>
                     </h2>
                     <div id="display-app" class="accordion-collapse collapse show" data-bs-parent="#accordion-app">
                         <div class="accordion-body vstack gap-3">
@@ -288,8 +273,8 @@
                             <div class="vstack gap-4">
                                 {#each flowData.flowAppProto as data}
                                     <div>
-                                        {#if flowData.appProto === "http" || flowData.appProto === "http2"}
-                                            <span class="fw-bold">{data.http_method ?? "?"} http://{data.hostname}:{data.http_port ?? flowData.dstPort}{data.url ?? ""} {data.protocol ?? ""} <i class="bi bi-caret-left-fill"></i> {data.status ?? "?"}</span>
+                                        {#if flowData.flow.app_proto === "http" || flowData.flow.app_proto === "http2"}
+                                            <span class="fw-bold">{data.http_method ?? "?"} http://{data.hostname}:{data.http_port ?? flowData.flow.dest_port}{data.url ?? ""} {data.protocol ?? ""} <i class="bi bi-caret-left-fill"></i> {data.status ?? "?"}</span>
                                             {#each data.request_headers as  h}
                                                 <p class="my-0">{h.name}: {h.value}</p>
                                             {/each}
@@ -303,7 +288,7 @@
                                 {/each}
                             </div>
                             <div class="vstack gap-3">
-                                {#each Object.entries(flowData.fileinfos[flowData.appProto]) as [k, v]}
+                                {#each Object.entries(flowData.fileinfos[flowData.flow.app_proto]) as [k, v]}
                                     <div class="accordion" id="accordion-app-{k}">
                                         <div class="accordion-item">
                                             <h2 class="accordion-header btn-group w-100">
@@ -351,7 +336,7 @@
         {#await rawFlowData}
             Loading...
         {:then rawFlowData}
-            {#if (flowData.proto === "TCP" || flowData.proto === "UDP") && flowData.flowEstablished}
+            {#if (flowData.flow.proto === "TCP" || flowData.flow.proto === "UDP") && flowData.flow.extra_data.state !== "new"}
                 <div class="accordion" id="accordion-raw">
                     <div class="accordion-item border-primary shadow-lg">
                         <h2 class="accordion-header">
@@ -395,7 +380,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body p-0">
-                            <RawReplay ipport={flowData.dstIpPort} data={flowData.flow} raw={rawFlowData.raw} />
+                            <RawReplay ipport={flowData.flow.dest_ipport} data={flowData.flow} raw={rawFlowData.raw} />
                         </div>
                     </div>
                 </div>
@@ -412,8 +397,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-0">
-                    {#if flowData.appProto === "http" || flowData.appProto === "http2"}
-                        <HttpReplay flowId={flowData.flowId} ipport={flowData.dstIpPort} data={flowData.flowAppProto} />
+                    {#if flowData.flow.app_proto === "http" || flowData.flow.app_proto === "http2"}
+                        <HttpReplay flowId={flowData.flow.id} ipport={flowData.flow.dest_ipport} data={flowData.flowAppProto} />
                     {:else}
                         <p>Script generation not implemented for this application protocol.</p>
                     {/if}

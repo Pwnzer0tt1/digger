@@ -53,7 +53,7 @@ export type Flow = {
         state: string,
         reason: string,
         alerted: boolean
-    } | null,
+    },
     alerts?: { tag: string }[]
 };
 export type Flows = Flow[];
@@ -65,6 +65,8 @@ export type Tag = {
 export type Tags = Tag[];
 
 export const flowId = z.bigint();
+
+export const sha256 = z.string().regex(/^[a-fA-F0-9]{64}$/);
 
 export const ctfConfig = z.object({
     start_date: z.iso.datetime({ local: true }),

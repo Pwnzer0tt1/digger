@@ -1,25 +1,17 @@
-// Copyright (C) 2024  ANSSI
-// SPDX-License-Identifier: GPL-2.0-or-later
-
 use diesel::{Connection, ConnectionError, PgConnection, QueryResult, RunQueryDsl};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use std::collections::HashMap;
-use std::sync::Mutex;
 use std::{thread, time};
 
-use crate::models::{NewAlert, NewAnomaly, NewAppEvent, NewFileinfo, NewFlow};
-use crate::schema::{alert, anomaly, app_event, fileinfo, flow};
+use crate::models::{NewAlert, NewOtherEvent, NewFlow};
+use crate::schema::{alert, other_event, flow};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
-lazy_static::lazy_static! {
-    static ref FLOW_PCAP: Mutex<HashMap<i64, String>> = Mutex::new(HashMap::new());
-}
 
 /// Add one Eve event to the SQL database
 fn write_event(conn: &mut PgConnection, buf: &str) -> QueryResult<usize> {
     // Parse EVE JSON to untyped JSON object
-    // After some benchmarks, it was concluded that serde_json parsing is around 30x faster than regex_lite (crate originally used in shovel) captures.
+    // After some benchmarks, it was concluded that serde_json parsing is around 30x faster than regex_lite captures (crate originally used in shovel).
     // regex create is generally faster compared to serde_json (1.5x-2x times) but having an already parsed JSON is more convinient.
     // Parsing to generic type serde_json::Value is slower than parsing into a typed struct
     // TODO: Create struct for parsing EVE JSON format
@@ -40,19 +32,6 @@ fn write_event(conn: &mut PgConnection, buf: &str) -> QueryResult<usize> {
         None => return Ok(0)
     };
 
-    // HACK: collect pcap_filename from app events, then use it later when writing flow event.
-    // `pcap_filename` pointed by flow events seem wrong, this is maybe a Suricata bug.
-    if event_type != "flow" {
-        if let Some(pcap_filename) = eve_json.get("pcap_filename") {
-            if let Ok(ref mut m) = FLOW_PCAP.try_lock() {
-                m.insert(flow_id, pcap_filename.to_string());
-            }
-            else {
-                log::warn!("Failed to lock FLOW_PCAP mutex, skipping insertion.");
-            }
-        }
-    }
-
     match event_type {
         "flow" => {
             let src_ip = eve_json.get("src_ip").expect("Missing src_ip").as_str().unwrap();
@@ -64,15 +43,6 @@ fn write_event(conn: &mut PgConnection, buf: &str) -> QueryResult<usize> {
             let dest_port: Option<i32> = match eve_json.get("dest_port") {
                 Some(v) => Some(v.as_i64().unwrap().try_into().unwrap()),
                 None => None
-            };
-            
-            let flow_pcap_local = FLOW_PCAP.lock().unwrap();
-            let pcap_filename = match flow_pcap_local.get(&flow_id) {
-                Some(v) => Some(v.as_str()),
-                None => match eve_json.get("pcap_filename") {
-                    Some(p) => Some(p.as_str().unwrap()),
-                    None => Some("")
-                }
             };
 
             let proto = eve_json.get("proto").unwrap().as_str().unwrap();
@@ -94,7 +64,6 @@ fn write_event(conn: &mut PgConnection, buf: &str) -> QueryResult<usize> {
                 src_port,
                 dest_ip,
                 dest_port,
-                pcap_filename,
                 proto,
                 app_proto,
                 metadata,
@@ -118,40 +87,16 @@ fn write_event(conn: &mut PgConnection, buf: &str) -> QueryResult<usize> {
                 .on_conflict_do_nothing()
                 .execute(conn)
         },
-        "anomaly" => {
-            let new_anomaly = NewAnomaly {
-                flow_id,
-                timestamp,
-                extra_data: eve_json.get("anomaly").cloned()
-            };
-
-            diesel::insert_into(anomaly::table)
-                .values(&new_anomaly)
-                .on_conflict_do_nothing()
-                .execute(conn)
-        },
-        "fileinfo" => {
-            let new_fileinfo = NewFileinfo {
-                flow_id,
-                timestamp,
-                extra_data: eve_json.get("fileinfo").cloned()
-            };
-
-            diesel::insert_into(fileinfo::table)
-                .values(&new_fileinfo)
-                .on_conflict_do_nothing()
-                .execute(conn)
-        },
         _ => {
-            let new_app_event = NewAppEvent {
+            let new_other_event = NewOtherEvent {
                 flow_id,
                 timestamp,
-                app_proto: event_type.to_string(),
+                event_type: event_type.to_string(),
                 extra_data: eve_json.get(event_type).cloned()
             };
 
-            diesel::insert_into(app_event::table)
-                .values(&new_app_event)
+            diesel::insert_into(other_event::table)
+                .values(&new_other_event)
                 .on_conflict_do_nothing()
                 .execute(conn)
         }
@@ -171,7 +116,7 @@ impl Database {
         url: String,
         rx: std::sync::mpsc::Receiver<String>,
     ) -> Result<Self, ConnectionError> {
-        // Lazy, ait for PostgreSQL container to start
+        // Lazy, wait for PostgreSQL container to start
         thread::sleep(time::Duration::from_secs(5));
 
         let mut conn = PgConnection::establish(&url)?;

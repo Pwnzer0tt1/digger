@@ -154,8 +154,8 @@
 
 <svelte:document onkeydown={shiftChange} onkeyup={shiftChange} />
 
-<div class="d-flex gap-3 text-light" style="background-color: #353535;">
-    <div style="background-color: #545454;">
+<div class="d-flex gap-3 text-light rounded-bottom" style="background-color: #353535;">
+    <div class="rounded-bottom" style="background-color: #545454;">
         {#each offset as o}
             <div class="px-2" style="height: 24px;">{o}</div>
         {/each}

@@ -33,7 +33,10 @@
 
     let rawFlowData = $derived.by(async () => {
         let res = await fetch(`/api/flow/${selectedFlow.flow?.id}/raw`);
-        let json = await res.json();
+        let json: {
+            server_to_client: string;
+            data: string;
+        }[] = await res.json();
 
         return {
             raw: json
@@ -86,7 +89,6 @@
             rdp?: any,
             rfb?: any
         } = await res.json();
-        console.log(json);
 
         const dateStart = json.flow.extra_data?.start.split("T").join(", ");
         const dateEnd = json.flow.extra_data?.end.split("T").join(", ");
@@ -100,41 +102,39 @@
                 filename: string,
                 filestore: string,
                 magic: string,
-                bytes: Uint8Array
+                bytes: Uint8Array,
+                sha256: string,
+                tx_id: number
             }[]
         } = {};
         if (json.flow.app_proto && json.flow.app_proto !== "failed") {
-            for (const [txId, data] of Object.entries(json[json.flow.app_proto])) {
-                let appDataFileinfo: {
-                    data: Blob,
-                    ext: string,
-                    filename: string,
-                    filestore: string,
-                    magic: string,
-                    bytes: Uint8Array,
-                    sha256: string
-                }[] = [];
-                if (json.fileinfo) {
-                    for (const d of json.fileinfo) {
-                        if (d.tx_id === Number(txId)) {
-                            let f = await fetch(`/api/filedata/${d.sha256}`);
-                            let ext = getExtFromMagic(d.magic ?? "");
-                            let blob = await f.clone().blob();
-                            let bytes = await f.bytes();
-                            appDataFileinfo.push({
-                                data: blob,
-                                ext,
-                                filename: d.filename,
-                                filestore: `/api/filedata/${d.sha256}`,
-                                magic: d.magic ?? "",
-                                bytes,
-                                sha256: d.sha256
-                            });
-                        }
-                    }
-                }
-                fileinfos[json.flow.app_proto] = appDataFileinfo;
+            let appDataFileinfo: {
+                data: Blob,
+                ext: string,
+                filename: string,
+                filestore: string,
+                magic: string,
+                bytes: Uint8Array,
+                sha256: string,
+                tx_id: number
+            }[] = [];
+            for (const d of json.fileinfo ?? []) {
+                let f = await fetch(`/api/filedata/${d.sha256}`);
+                let ext = getExtFromMagic(d.magic ?? "");
+                let blob = await f.clone().blob();
+                let bytes = await f.bytes();
+                appDataFileinfo.push({
+                    data: blob,
+                    ext,
+                    filename: d.filename,
+                    filestore: `/api/filedata/${d.sha256}`,
+                    magic: d.magic ?? "",
+                    bytes,
+                    sha256: d.sha256,
+                    tx_id: d.tx_id
+                });
             }
+            fileinfos[json.flow.app_proto] = appDataFileinfo;
         }
 
         return {
@@ -270,8 +270,8 @@
                                 <button class="ms-auto btn btn-primary" data-bs-toggle="modal" data-bs-target="#app-replay-script" aria-label="Generate script">Generate script</button>
                             </div>
                             <hr>
-                            <div class="vstack gap-4">
-                                {#each flowData.flowAppProto as data}
+                            <div class="vstack gap-3">
+                                {#each Object.entries(flowData.flowAppProto) as [tx_id, data]}
                                     <div>
                                         {#if flowData.flow.app_proto === "http" || flowData.flow.app_proto === "http2"}
                                             <span class="fw-bold">{data.http_method ?? "?"} http://{data.hostname}:{data.http_port ?? flowData.flow.dest_port}{data.url ?? ""} {data.protocol ?? ""} <i class="bi bi-caret-left-fill"></i> {data.status ?? "?"}</span>
@@ -285,45 +285,45 @@
                                             <span>{JSON.stringify(data, null, 4)}</span>
                                         {/if}
                                     </div>
-                                {/each}
-                            </div>
-                            <div class="vstack gap-3">
-                                {#each Object.entries(flowData.fileinfos[flowData.flow.app_proto]) as [k, v]}
-                                    <div class="accordion" id="accordion-app-{k}">
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header btn-group w-100">
-                                                <a href={v.filestore} download="{v.filename.replace("/", "_")}.{v.ext}" class="btn btn-success rounded-bottom-0">Download File</a>
-                                                <button class="accordion-button rounded-start-0" type="button" data-bs-toggle="collapse" data-bs-target="#app-render-{k}" aria-expanded="true" aria-controls="collapseOne">File: {v.filename}  {v.magic}</button>
-                                            </h2>
-                                            <div id="app-render-{k}" class="accordion-collapse collapse show" data-bs-parent="#accordion-app-render-{k}">
-                                                {#if appDataActiveView === "render"}
-                                                    <div class="accordion-body">
-                                                        {#if ["gif", "jpg", "png", "svg"].includes(v.ext)}
-                                                            <img src={URL.createObjectURL(v.data)} alt="">
-                                                        {:else if v.ext === "pdf"}
-                                                            <iframe title="App data viewer" src={URL.createObjectURL(v.data)} frameborder="0"></iframe>
-                                                        {:else if v.ext === "html"}
-                                                            <iframe class="bg-light w-100" style="height: 40vh;" title="HTML renderer" src={URL.createObjectURL(v.data.slice(0, v.data.size, "text/html"))} frameborder="0"></iframe>
-                                                        {:else}
-                                                            {#await v.data.text() then t}
-                                                                <pre class="text-break">{t}</pre>
-                                                            {/await}
+                                    {#each Object.entries(flowData.fileinfos[flowData.flow.app_proto]) as [k, v]}
+                                        {#if v.tx_id === Number(tx_id)}
+                                            <div class="accordion" id="accordion-app-{k}">
+                                                <div class="accordion-item">
+                                                    <h2 class="accordion-header btn-group w-100">
+                                                        <a href={v.filestore} download="{v.filename.replace("/", "_")}.{v.ext}" class="btn btn-success rounded-bottom-0">Download File</a>
+                                                        <button class="accordion-button rounded-start-0" type="button" data-bs-toggle="collapse" data-bs-target="#app-render-{k}" aria-expanded="true" aria-controls="collapseOne">File: {v.filename}  {v.magic}</button>
+                                                    </h2>
+                                                    <div id="app-render-{k}" class="accordion-collapse collapse show" data-bs-parent="#accordion-app-render-{k}">
+                                                        {#if appDataActiveView === "render"}
+                                                            <div class="accordion-body p-1">
+                                                                {#if ["gif", "jpg", "png", "svg"].includes(v.ext)}
+                                                                    <img src={URL.createObjectURL(v.data)} alt="">
+                                                                {:else if v.ext === "pdf"}
+                                                                    <iframe title="App data viewer" src={URL.createObjectURL(v.data)} frameborder="0"></iframe>
+                                                                {:else if v.ext === "html"}
+                                                                    <iframe class="bg-light w-100" style="height: 40vh;" title="HTML renderer" src={URL.createObjectURL(v.data.slice(0, v.data.size, "text/html"))} frameborder="0"></iframe>
+                                                                {:else}
+                                                                    {#await v.data.text() then t}
+                                                                        <pre class="text-break">{t}</pre>
+                                                                    {/await}
+                                                                {/if}
+                                                            </div>
+                                                        {:else if appDataActiveView === "utf8"}
+                                                            <div class="accordion-body p-0">
+                                                                {#await v.data.text() then t}
+                                                                    <TextViewer text={t} ext={v.ext} magic={v.magic} sha256={v.sha256} />
+                                                                {/await}
+                                                            </div>
+                                                        {:else if appDataActiveView === "hex"}
+                                                            <div class="accordion-body p-0">
+                                                                <HexDumpViewer sha256={v.sha256} blob={v.bytes} />
+                                                            </div>
                                                         {/if}
                                                     </div>
-                                                {:else if appDataActiveView === "utf8"}
-                                                    <div class="accordion-body p-0">
-                                                        {#await v.data.text() then t}
-                                                            <TextViewer text={t} ext={v.ext} magic={v.magic} sha256={v.sha256} />
-                                                        {/await}
-                                                    </div>
-                                                {:else if appDataActiveView === "hex"}
-                                                    <div class="accordion-body">
-                                                        <HexDumpViewer sha256={v.sha256} blob={v.bytes} />
-                                                    </div>
-                                                {/if}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
+                                        {/if}
+                                    {/each}
                                 {/each}
                             </div>
                         </div>

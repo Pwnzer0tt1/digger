@@ -16,11 +16,8 @@
 </script>
 
 <div class="card shadow-lg h-100 overflow-auto">
-    <div class="card-header hstack">
-        <h5 class="modal-title flex-grow-1">Stats</h5>
-        <button onclick={() => {selectedPanel.view = undefined; ctfConfig.hideSideBar = false;}} type="button" class="btn-close" aria-label="Close"></button>
-    </div>
-    <div class="card-body">
+    <div class="card-header hstack gap-3">
+        <h5 class="modal-title">Stats</h5>
         <ul class="nav nav-underline">
             <li class="nav-item">
                 <button onclick={() => activeView = "overview"} class="nav-link {activeView === "overview" ? "active" : ""}" >Overview</button>
@@ -28,18 +25,17 @@
             <li class="nav-item">
                 <button onclick={() => activeView = "services"} class="nav-link {activeView === "services" ? "active" : ""}">Services</button>
             </li>
-            
-            <button onclick={() => ctfConfig.hideSideBar = !ctfConfig.hideSideBar} class="ms-auto btn btn-outline-primary" aria-label="Fullscreen">
-                {#if ctfConfig.hideSideBar}
-                    <i class="bi bi-fullscreen-exit"></i>
-                {:else}
-                    <i class="bi bi-fullscreen"></i>
-                {/if}
-            </button>
         </ul>
-
-        <hr>
-
+        <button onclick={() => ctfConfig.hideSideBar = !ctfConfig.hideSideBar} class="ms-auto btn btn-outline-secondary" aria-label="Fullscreen">
+            {#if ctfConfig.hideSideBar}
+                <i class="bi bi-fullscreen-exit"></i>
+            {:else}
+                <i class="bi bi-fullscreen"></i>
+            {/if}
+        </button>
+        <button onclick={() => {selectedPanel.view = undefined; ctfConfig.hideSideBar = false;}} type="button" class="btn btn-outline-secondary" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="card-body">
         {#await data}
             <div class="d-flex justify-content-center">
                 <div class="spinner-border my-5" role="status">

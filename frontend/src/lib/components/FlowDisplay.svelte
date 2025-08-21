@@ -251,25 +251,23 @@
         {#if flowData.flow.app_proto && flowData.flow.app_proto !== "failed"}
             <div class="accordion" id="accordion-app">
                 <div class="accordion-item border-success shadow-lg">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button bg-body-tertiary text-body-emphasis" type="button" data-bs-toggle="collapse" data-bs-target="#display-app" aria-expanded="true" aria-controls="display-app">{flowData.flow.app_proto}</button>
-                    </h2>
-                    <div id="display-app" class="accordion-collapse collapse show" data-bs-parent="#accordion-app">
+                    <div class="accordion-header hstack gap-3 bg-body-tertiary p-1 px-3 rounded">
+                        <h5 class="mb-0">{flowData.flow.app_proto}</h5>
+                        <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                            <input value="render" onchange={changeAppDataView} type="radio" class="btn-check" name="appviewbtnradio" id="app-data-btn-render" autocomplete="off" checked={appDataActiveView === "render"}>
+                            <label class="btn btn-sm btn-outline-primary" for="app-data-btn-render">Render</label>
+
+                            <input value="utf8" onchange={changeAppDataView} type="radio" class="btn-check" name="appviewbtnradio" id="app-data-btn-utf8" autocomplete="off"  checked={appDataActiveView === "utf8"}>
+                            <label class="btn btn-sm btn-outline-primary" for="app-data-btn-utf8">UTF-8</label>
+
+                            <input value="hex" onchange={changeAppDataView} type="radio" class="btn-check" name="appviewbtnradio" id="app-data-btn-hex" autocomplete="off"  checked={appDataActiveView === "hex"}>
+                            <label class="btn btn-sm btn-outline-primary" for="app-data-btn-hex">Hex</label>
+                        </div>
+                        <button class="ms-auto btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#app-replay-script" aria-label="Generate script">Generate script</button>
+                        <button class="btn" type="button" data-bs-toggle="collapse" data-bs-target="#display-app" aria-expanded="true" aria-controls="display-app" aria-label="Toggle accordion"><i class="bi bi-chevron-down"></i></button>
+                    </div>
+                    <div id="display-app" class="accordion-collapse collapse show">
                         <div class="accordion-body vstack gap-3">
-                            <div class="hstack">
-                                <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
-                                    <input value="render" onchange={changeAppDataView} type="radio" class="btn-check" name="appviewbtnradio" id="app-data-btn-render" autocomplete="off" checked={appDataActiveView === "render"}>
-                                    <label class="btn btn-outline-primary" for="app-data-btn-render">Render</label>
-
-                                    <input value="utf8" onchange={changeAppDataView} type="radio" class="btn-check" name="appviewbtnradio" id="app-data-btn-utf8" autocomplete="off"  checked={appDataActiveView === "utf8"}>
-                                    <label class="btn btn-outline-primary" for="app-data-btn-utf8">UTF-8</label>
-
-                                    <input value="hex" onchange={changeAppDataView} type="radio" class="btn-check" name="appviewbtnradio" id="app-data-btn-hex" autocomplete="off"  checked={appDataActiveView === "hex"}>
-                                    <label class="btn btn-outline-primary" for="app-data-btn-hex">Hex</label>
-                                </div>
-                                <button class="ms-auto btn btn-primary" data-bs-toggle="modal" data-bs-target="#app-replay-script" aria-label="Generate script">Generate script</button>
-                            </div>
-                            <hr>
                             <div class="vstack gap-3">
                                 {#each Object.entries(flowData.flowAppProto) as [tx_id, data]}
                                     <div>
@@ -293,7 +291,7 @@
                                                         <a href={v.filestore} download="{v.filename.replace("/", "_")}.{v.ext}" class="btn btn-success rounded-bottom-0">Download File</a>
                                                         <button class="accordion-button rounded-start-0" type="button" data-bs-toggle="collapse" data-bs-target="#app-render-{k}" aria-expanded="true" aria-controls="collapseOne">File: {v.filename}  {v.magic}</button>
                                                     </h2>
-                                                    <div id="app-render-{k}" class="accordion-collapse collapse show" data-bs-parent="#accordion-app-render-{k}">
+                                                    <div id="app-render-{k}" class="accordion-collapse collapse show">
                                                         {#if appDataActiveView === "render"}
                                                             <div class="accordion-body p-1">
                                                                 {#if ["gif", "jpg", "png", "svg"].includes(v.ext)}
@@ -339,29 +337,27 @@
             {#if (flowData.flow.proto === "TCP" || flowData.flow.proto === "UDP") && flowData.flow.extra_data.state !== "new"}
                 <div class="accordion" id="accordion-raw">
                     <div class="accordion-item border-primary shadow-lg">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button bg-body-tertiary text-body-emphasis" type="button" data-bs-toggle="collapse" data-bs-target="#display-raw" aria-expanded="true" aria-controls="display-raw">Raw data</button>
-                        </h2>
-                        <div id="display-raw" class="accordion-collapse collapse show" data-bs-parent="#accordion-raw">
-                            <div class="accordion-body vstack gap-3">
-                                <div class="hstack">
-                                    <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
-                                        <input value="utf8" onchange={changeRawDataView} type="radio" class="btn-check" name="rawviewbtnradio" id="raw-data-btn-utf8" autocomplete="off" checked={rawDataActiveView === "utf8"}>
-                                        <label class="btn btn-outline-primary" for="raw-data-btn-utf8">UTF-8</label>
+                        <div class="accordion-header hstack gap-3 bg-body-tertiary p-1 px-3 rounded">
+                            <h5 class="mb-0">Raw data</h5>
+                            <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+                                <input value="utf8" onchange={changeRawDataView} type="radio" class="btn-check" name="rawviewbtnradio" id="raw-data-btn-utf8" autocomplete="off" checked={rawDataActiveView === "utf8"}>
+                                <label class="btn btn-sm btn-outline-primary" for="raw-data-btn-utf8">UTF-8</label>
 
-                                        <input value="hex" onchange={changeRawDataView} type="radio" class="btn-check" name="rawviewbtnradio" id="raw-data-btn-hex" autocomplete="off" checked={rawDataActiveView === "hex"}>
-                                        <label class="btn btn-outline-primary" for="raw-data-btn-hex">Hex</label>
-                                    </div>
-                                    <button class="ms-auto btn btn-primary" data-bs-toggle="modal" data-bs-target="#raw-replay-script" aria-label="Generate script">Generate script</button>
-                                </div>
-                                <hr>
+                                <input value="hex" onchange={changeRawDataView} type="radio" class="btn-check" name="rawviewbtnradio" id="raw-data-btn-hex" autocomplete="off" checked={rawDataActiveView === "hex"}>
+                                <label class="btn btn-sm btn-outline-primary" for="raw-data-btn-hex">Hex</label>
+                            </div>
+                            <button class="ms-auto btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#raw-replay-script" aria-label="Generate script">Generate script</button>
+                            <button class="btn" type="button" data-bs-toggle="collapse" data-bs-target="#display-raw" aria-expanded="true" aria-controls="display-raw" aria-label="Toggle accordion"><i class="bi bi-chevron-down"></i></button>
+                        </div>
+                        <div id="display-raw" class="accordion-collapse collapse show">
+                            <div class="accordion-body vstack gap-3">
                                 <div class="vstack gap-3 mt-3">
                                     {#each Object.entries(rawFlowData.raw) as [i, chunk]}
                                         {@const byteArray = Uint8Array.from(atob(chunk.data), c => c.charCodeAt(0))}
                                         {#if rawDataActiveView === "utf8"}
-                                            <pre class="p-2 {chunk.server_to_client === "0" ? "bg-danger" : ""}{chunk.server_to_client === "1" ? "bg-success" : ""}">{new TextDecoder().decode(byteArray)}</pre>
+                                            <pre class="rounded p-2 {chunk.server_to_client === "0" ? "bg-danger" : ""}{chunk.server_to_client === "1" ? "bg-success" : ""}">{new TextDecoder().decode(byteArray)}</pre>
                                         {:else if rawDataActiveView === "hex"}
-                                            <pre class="p-2 {chunk.server_to_client === "0" ? "bg-danger" : ""}{chunk.server_to_client === "1" ? "bg-success" : ""}"><HexDumpViewer sha256={i} blob={byteArray} /></pre>
+                                            <pre class="rounded p-2 {chunk.server_to_client === "0" ? "bg-danger" : ""}{chunk.server_to_client === "1" ? "bg-success" : ""}"><HexDumpViewer sha256={i} blob={byteArray} /></pre>
                                         {/if}
                                     {/each}
                                 </div>

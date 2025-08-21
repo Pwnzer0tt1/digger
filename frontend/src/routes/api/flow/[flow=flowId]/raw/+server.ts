@@ -20,15 +20,10 @@ export const GET: RequestHandler = async ({ params, locals }) => {
         }
     });
 
-    let result: { server_to_client: string, data: string }[] = [];
-    for (const r of raws) {
-        if (r.server_to_client && r.blob) {
-            result.push({
-                server_to_client: r.server_to_client?.toString(),
-                data: Buffer.from(r.blob).toString("base64")
-            });
+    return json(raws.map((v) => {
+        return {
+            server_to_client: v.server_to_client?.toString(),
+            data: v.blob === null ? "" : Buffer.from(v.blob).toString("base64")
         }
-    }
-    
-    return json(result);
+    }));
 };

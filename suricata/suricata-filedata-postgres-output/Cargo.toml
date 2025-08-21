@@ -1,3 +1,7 @@
+# Copyright (C) 2025  A. Iooss
+# SPDX-License-Identifier: CC0-1.0
+# Modified by Pwnzer0tt1
+
 [package]
 name = "suricata-filedata-postgres-output"
 version = "0.1.0"

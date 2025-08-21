@@ -1,3 +1,8 @@
+// Copyright (C) 2024  ANSSI
+// Copyright (C) 2025  A. Iooss
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Modified by Pwnzer0tt1
+
 mod database;
 mod ffi;
 mod schema;

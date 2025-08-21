@@ -1,3 +1,7 @@
+// Copyright (C) 2025  A. Iooss
+// SPDX-License-Identifier: GPL-2.0-or-later
+// Modified by Pwnzer0tt1
+
 use std::{thread, time};
 
 use crate::{models::NewFiledata, schema::filedata, Filedata};

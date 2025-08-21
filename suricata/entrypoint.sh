@@ -1,6 +1,7 @@
 #!/bin/sh
 # Copyright (C) 2024  ANSSI
 # SPDX-License-Identifier: CC0-1.0
+# Modified by Pwnzer0tt1
 
 # pipefail: exit Suricata if pcap-over-ip connection ends
 set -euo pipefail

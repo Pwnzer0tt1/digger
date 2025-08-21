@@ -1,3 +1,7 @@
+# Copyright (C) 2023-2024  ANSSI
+# SPDX-License-Identifier: CC0-1.0
+# Modified by Pwnzer0tt1
+
 # Build stage
 FROM rust:1.87.0-alpine3.22 AS builder
 

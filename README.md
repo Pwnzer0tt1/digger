@@ -1,55 +1,91 @@
-# Shovel
-
 <!--
 Copyright (C) 2023-2024  ANSSI
 SPDX-License-Identifier: CC0-1.0
+Modified by Pwnzer0tt1
 -->
 
-Shovel is a web application that offers a graphical user interface to explore
-[Suricata Extensible Event Format (EVE) outputs](https://docs.suricata.io/en/suricata-7.0.1/output/eve/eve-json-output.html).
+# Digger
+
+## Index
+
+- [What is Digger?](#what-is-digger)
+- [Differences with Shovel](#differences-with-shovel)
+- [Getting started](#getting-started)
+- [Usage](#usage)
+- [FAQs](#faqs)
+- [Licensing](#licensing)
+
+## What is Digger?
+
+Digger is a web application that offers a graphical user interface to explore
+[Suricata Extensible Event Format (EVE) outputs](https://docs.suricata.io/en/latest/output/eve/eve-json-output.html).
 Its primary focus is to help [Capture-the-Flag players](https://en.wikipedia.org/wiki/Capture_the_flag_(cybersecurity))
 analyse network flows during stressful and time-limited attack-defense games such as
-[FAUSTCTF](https://faustctf.net/), [ENOWARS](https://enowars.com/) or [ECSC](https://ecsc.eu/).
-Shovel is developed in the context of
-[ECSC Team France](https://ctftime.org/team/159269/) training.
+[FAUSTCTF](https://faustctf.net/), [ENOWARS](https://enowars.com/), [CyberChallengeIT](https://cyberchallenge.it/) or [ECSC](https://ecsc.eu/).
+Digger is a fork of [Shovel](https://github.com/FCSC-FR/shovel) made by Pwnzer0tt1.
 
-![Shovel](./.github/demo.webp)
+![Digger](./.github/demo.webp)
 
 You might also want to have a look at these other awesome traffic analyser tools:
-
 - <https://github.com/secgroup/flower> (first commit in 2018)
 - <https://github.com/eciavatta/caronte> (first commit in 2020)
 - <https://github.com/OpenAttackDefenseTools/tulip> (fork from flower in May 2022)
+- <https://github.com/FCSC-FR/shovel> (repository on which Digger is based)
 
-Compared to these traffic analyser tools, Shovel only relies on Suricata while
+Compared to these traffic analyser tools, excluding Shovel, Digger only relies on Suricata while
 making opinionated choices for the frontend. This has a few nice implications:
 
 - dissection of all application protocols supported by Suricata (HTTP2, modbus, SMB, DNS, etc),
-- flows payloads and dissections are stored inside SQLite databases for fast queries,
+- flows payloads and dissections are stored inside PostgreSQL database for fast queries,
 - ingest can be a folder of pcaps for non-root CTF, or a live capture (less delay),
 - tags are defined using Suricata rules (regex, libmagic match, HTTP header, etc),
-- no heavy build tools needed, Shovel is easy to tweak.
+- no heavy build tools needed, Digger is easy to tweak.
 
-Moreover, Shovel is batteries-included with some Suricata alert rules.
+Moreover, Digger is batteries-included with some Suricata alert rules.
 
 ```
-        ┌────────────────────────┐
-device  │ Suricata with:         │   eve.db    ┌───────────────┐
-or pcap │  - Eve SQLite plugin   ├────────────►│               │
-───────►│  - TCP payloads plugin │ payload.db  │ Python webapp │
-        │  - UDP payloads plugin ├────────────►│               │
-        └────────────────────────┘             └────▲──────────┘
-                                              .env  │
-                                              ──────┘
+              ┌───►stats.log                                                  
+              │                                                               
+              │     ┌────►suricata.log                         ctf_config.json
+              │     │                                         ┌───────────────
+              │     │     ┌────►pcaps/*                       │               
+              │     │     │                                   │               
+           ┌──┴─────┴─────┴────────────────┐       ┌──────────▼ ────────┐     
+device     │                               │       │                    │     
+or pcap    │  Suricata with:               │       │                    │     
+──────────►│  - Eve PostgreSQL plugin      │       │  SvelteKit webapp  │     
+           │  - TCP & UDP payloads plugin  │       │                    │     
+           │                               │       │                    │     
+           └──────▲────────┬───────────────┘       └──────────┬─────────┘     
+                  │        │                                  │               
+                  │        │        ┌──────────────────┐      │               
+   suricata.rules │        │        │                  │      │               
+   ───────────────┘        │        │                  │      │               
+                           └───────►│    PostgreSQL    │◄─────┘               
+                                    │                  │                      
+                                    │                  │                      
+                                    └──────────────────┘                      
 ```
+
+## Differences with Shovel
+
+- The frontend is made with SvelteKit
+- The UI has a fresh style with some new features: hexdump viewer, code highlighting, stats page
+- CTF related settings (e.g. tick length, datetime start) are stored using a JSON file that can be edited from the webapp.
+- A `start.py` that automatically starts Digger
+- A single PostgreSQL container is used in place of two separated SQLite files
+
 
 ## Getting started
 
 ### Services mapping, ticks and flag format configuration
 
-Shovel is configured using environment variables.
-Copy `example.env` to `.env` and update the optional configuration parameters.
-You may update this file later and restart only the webapp.
+CTF related infos are stored in a JSON file and can be edited directly from the webapp:
+- tick length
+- available services
+- start datetime
+- end datetime
+
 
 Add the flag format in `suricata/rules/suricata.rules` if needed.
 If you modify this file after starting Suricata, you may reload rules using
@@ -57,7 +93,7 @@ If you modify this file after starting Suricata, you may reload rules using
 
 ### Network capture
 
-Shovel currently implements 3 capture modes:
+Digger currently implements 3 capture modes:
 
 - **Mode A**: pcap replay (slower, for archives replay or rootless CTF).
 - **Mode B**: capture interface (fast, requires root on vulnbox and in Docker).
@@ -151,9 +187,9 @@ PCAP_OVER_IP=pcap-broker:4242 ./suricata/entrypoint.sh -r /dev/stdin
 
 ## Usage
 
-### Starting Shovel
+### Starting Digger
 
-Shovel provides a convenient `./start.py` script to manage containers and configuration. The script supports multiple commands with a user-friendly interface.
+Digger provides a convenient `./start.py` script to manage containers and configuration. The script supports multiple commands with a user-friendly interface.
 
 If you run `./start.py` without arguments, it will enter interactive mode where you can select actions and configure parameters through guided prompts.
 
@@ -166,9 +202,9 @@ Here you can find a list of available commands to use with `./start.py`:
 - **`logs`** - Follow container logs
 - **`help`** - Show help information
 
-#### Launching Shovel
+#### Launching Digger
 
-To start Shovel, use the `start` command with one of the following capture modes:
+To start Digger, use the `start` command with one of the following capture modes:
 
 - `--mode-a` - **Mode A**, for pcap replay mode
 - `--mode-b` - **Mode B**, for live capture interface mode  
@@ -200,7 +236,7 @@ Here you can find an example with the full configuration:
 - `--no-build`: Skip building Docker images (use existing images)
 - `--no-clean`: Skip cleaning environment (keep existing data)
 
-#### Stopping Shovel
+#### Stopping Digger
 
 To stop running containers:
 
@@ -282,7 +318,7 @@ Common command examples:
 
 ### Customizing services
 
-To setup the services mapping, you can edit the `.env` file by hand. In alternative, once Shovel is started you can customize the configuration directly from the web interface.
+To setup the services mapping, you can edit the `.env` file by hand. In alternative, once Digger is started you can customize the configuration directly from the web interface.
 
 Click on the settings icon in the top left corner to open the **Service Manager** modal. Here you can add:
 
@@ -293,13 +329,13 @@ Click on the settings icon in the top left corner to open the **Service Manager*
 After adding a service, you can also edit it by clicking on the pencil icon next to the service name.
 
 > [!WARNING]
-> Note that if Shovel is restarted without the `--no-clean` flag, the configuration in the web interface will be lost. Use `./start.py start --no-clean` to preserve existing configuration.
+> Note that if Digger is restarted without the `--no-clean` flag, the configuration in the web interface will be lost. Use `./start.py start --no-clean` to preserve existing configuration.
 
 ### Auto Refresh
 
-Shovel includes an auto-refresh feature that automatically refreshes the flow list with an interval specified by the `REFRESH_RATE` parameter in the `.env` file. After updating, the interface will scroll to the previously selected flow (if any).
+Digger includes an auto-refresh feature that automatically refreshes the flow list with an interval specified by the `REFRESH_RATE` parameter in the `.env` file. After updating, the interface will scroll to the previously selected flow (if any).
 
-The default value of `REFRESH_RATE` can be set during Shovel startup using the `--refresh-rate` parameter:
+The default value of `REFRESH_RATE` can be set during Digger startup using the `--refresh-rate` parameter:
 
 ```bash
 ./start.py start --refresh-rate 60
@@ -323,7 +359,7 @@ as source and destination ports and addresses). See source code:
 
 Most CTF uses OpenVPN or Wireguard for the "game" network interface on the vulnbox,
 which means you can duplicate the traffic to an OpenSSH `tun` tunnel.
-Using this method, Shovel can run on another machine in live capture mode.
+Using this method, Digger can run on another machine in live capture mode.
 
 > [!WARNING]
 > If you need to clone a physical Ethernet interface such as `eth0`,
@@ -365,3 +401,18 @@ using:
 ```bash
 pkill -USR2 suricata
 ```
+
+## Licensing
+Most of the original code of Shovel has been completly changed.
+
+The webapp now inside the folder [frontend](/frontend/) shares some similiarities but none of the original files remained, everything is new.
+
+The part related to Suricata is what remain in common with Shovel, except for the use of PostgreSQL as database and Diesel ORM as SQL driver. Some minor changes were also made like: use `crossbeam` in place of `mspc`, remove the much slower `regex_lite` and use `serde_json`.
+
+An important part that remained the same is the template used for registering the plugins. Thanks to [FCSC-FR](https://github.com/FCSC-FR) we figured how to use Suricata 8.0.0 in Digger without breaking stuff.
+
+The files in common with Shovel contain the original copyright line. If a file was edited in some way by us the line `Modified by Pwnzer0tt1` was added.
+
+The original Shovel licenses can be found [here](/Shovel-LICENSES/).
+
+Digger is distributed with a GPL-3.0 license.

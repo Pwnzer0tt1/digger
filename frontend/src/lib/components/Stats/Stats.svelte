@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ctfConfig, selectedPanel } from "$lib/state.svelte";
-	import Toast from "./Toast.svelte";
+	import Toast from "../Toast.svelte";
 	import StatsOverview from "./StatsOverview.svelte";
 	import StatsServices from "./StatsServices.svelte";
 

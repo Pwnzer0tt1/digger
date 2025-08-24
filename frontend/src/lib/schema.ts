@@ -72,7 +72,6 @@ export const ctfConfig = z.object({
     start_date: z.iso.datetime({ local: true }),
     end_date: z.iso.datetime({ local: true }),
     tick_length: z.number().min(1),
-    refresh_rate: z.number().min(1),
     services: z.record(z.string(), z.object({
         ipports: z.array(z.object({
             ip: z.ipv4(),
@@ -87,8 +86,7 @@ export type CtfConfig = z.infer<typeof ctfConfig>;
 export const newCtfConfig = z.object({
     start_date: z.iso.datetime({ local: true }),
     end_date: z.iso.datetime({ local: true }),
-    tick_length: z.int().min(1),
-    refresh_rate: z.int().min(1)
+    tick_length: z.int().min(1)
 });
 
 export type NewCtfConfig = z.infer<typeof newCtfConfig>;

@@ -15,7 +15,6 @@ export function loadConfig(path = "./ctf_config.json") {
             start_date: new Date().toISOString().slice(0, -8),
             end_date: end_date.toISOString().slice(0, -8),
             tick_length: 120,
-            refresh_rate: 120,
             services: {}
         };
     }
@@ -32,7 +31,6 @@ export function loadConfig(path = "./ctf_config.json") {
             start_date: new Date().toISOString().slice(0, -8),
             end_date: end_date.toISOString().slice(0, -8),
             tick_length: 120,
-            refresh_rate: 120,
             services: {}
         };
     }

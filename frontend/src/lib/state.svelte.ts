@@ -26,6 +26,7 @@ export const flowsFilters: FlowsListFilters = $state({ ts_to: String(1e16), tags
 export const ctfConfig: {
     config: CtfConfig,
     autoUpdate: boolean,
+    refreshRate: number,
     ctfEnded: boolean,
     hideSideBar: boolean
 } = $state({
@@ -33,10 +34,10 @@ export const ctfConfig: {
         start_date: new Date().toISOString(),
         end_date: new Date().toISOString(),
         tick_length: 120,
-        refresh_rate: 60,
         services: {}
     },
     autoUpdate: true,
+    refreshRate: 60,
     ctfEnded: false,
     hideSideBar: false
 });

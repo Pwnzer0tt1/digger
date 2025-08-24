@@ -350,7 +350,7 @@ In order to work properly and display correct informations Digger requires speci
 - start datetime (default to present datetime)
 - end datetime (default to present datetime + 8 hours)
 
-Digger includes an auto-refresh feature that automatically refreshes the flow list with an interval specified in the configuration. After updating, the interface will scroll to the previously selected flow (if any), by default is every 120 seconds. The auto-refresh is client specific, that means every user can decide the refresh interval.
+Digger includes an auto-refresh feature that automatically refreshes the flow list with an interval specified in the configuration. After updating, the interface will scroll to the previously selected flow (if any), by default is every 60 seconds. The auto-refresh is client specific, that means every user can decide the refresh interval.
 
 The auto-refresh feature can be toggled by clicking the **Auto-Update** button in the top left corner of the web interface.
 

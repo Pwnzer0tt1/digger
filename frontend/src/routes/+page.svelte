@@ -92,7 +92,7 @@
             if (ctfConfig.autoUpdate) {
                 getFlowsList();
             }
-        }, ctfConfig.config.refresh_rate * 1000);
+        }, ctfConfig.refreshRate * 1000);
     });
 
     onMount(() => {

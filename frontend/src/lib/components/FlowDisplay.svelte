@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Flow } from "$lib/schema";
+	import type { AlertExtraData, Fileinfo, Flow, HTTPMetadata } from "$lib/schema";
 	import { ctfConfig, selectedFlow } from "$lib/state.svelte";
 	import HexDumpViewer from "./DataViewers/HexDumpViewer.svelte";
 	import HttpReplay from "./ScriptGenerators/HttpReplay.svelte";
@@ -65,37 +65,15 @@
         let res = await fetch(`/api/flow/${selectedFlow.flow?.id}`);
         let json: {
             flow: Flow,
-            fileinfo?: {
-                gaps: boolean,
-                size: number,
-                state: string,
-                tx_id: number,
-                sha256: string,
-                stored: boolean,
-                file_id: number,
-                filename: string,
-                magic?: string
-            }[],
+            fileinfo?: Fileinfo[],
             alert?: {
-                extra_data: {
-                    gid: number,
-                    rev: number,
-                    action: string,
-                    category: string,
-                    metadata: {
-                        tag: string[],
-                        color: string[]
-                    },
-                    severity: number,
-                    signature: string,
-                    signature_id: number
-                },
+                extra_data: AlertExtraData,
                 color: string
             }[],
             anomaly: {
                 extra_data: any
             }[],
-            http?: any,
+            http?: HTTPMetadata[],
             http2?: any,
             quic?: any,
             websocket?: any,
@@ -106,7 +84,8 @@
             smb?: any,
             ssh?: any,
             rdp?: any,
-            rfb?: any
+            rfb?: any,
+            [key: string]: any
         } = await res.json();
 
         const dateStart = json.flow.extra_data?.start.split("T").join(", ");
@@ -114,7 +93,9 @@
         const start_ts = Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000);
         const tick = ((Number(json.flow.ts_start) / 1000000 - start_ts) / ctfConfig.config.tick_length).toFixed(3);
 
-        let flowAppProto = {};
+        let flowAppProto: {
+            [key: string]: any
+        } = {};
         let fileinfos: {
             [key: string]: {
                 data: Blob,
@@ -224,7 +205,6 @@
 {#await flowData}
     Loading...
 {:then flowData}
-    {@debug flowData}
     <div class="vstack gap-3">
         <!-- Flow card -->
         <div class="hstack gap-2 align-items-stretch">
@@ -296,11 +276,11 @@
                             <div class="vstack gap-3">
                                 {#each Object.entries(flowData.flowAppProto) as [app_proto, flow_app_proto] }
                                     {#if app_proto === "http" || app_proto === "http2"}
-                                        <HttpFlow appDataActiveView={appDataActiveView} flowData={flowData} app_proto={app_proto} flow_app_proto={flow_app_proto} />
+                                        <HttpFlow appDataActiveView={appDataActiveView} destPort={flowData.flow.dest_port} fileinfos={flowData.fileinfos[app_proto]} app_proto={app_proto} flow_app_proto={flow_app_proto} />
                                     {:else if app_proto === "websocket"}
-                                        <WebsocketFlow appDataActiveView={appDataActiveView} flowData={flowData} app_proto={app_proto} flow_app_proto={flow_app_proto} />
+                                        <WebsocketFlow appDataActiveView={appDataActiveView} fileinfos={flowData.fileinfos[app_proto]} flow_app_proto={flow_app_proto} />
                                     {:else}
-                                        {#each Object.entries(flow_app_proto) as [tx_id, data]}
+                                        {#each Object.entries(flow_app_proto as any) as [tx_id, data]}
                                             <div>
                                                 <span>{JSON.stringify(data, null, 4)}</span>
                                             </div>

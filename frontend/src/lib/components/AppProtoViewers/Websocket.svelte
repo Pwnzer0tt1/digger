@@ -1,7 +1,12 @@
 <script lang="ts">
+	import type { AppDataFileinfo, WebsocketMetadata } from "$lib/schema";
 	import FlowAppFileView from "../FlowAppFileView.svelte";
 
-    let { appDataActiveView, flowData, app_proto, flow_app_proto } = $props();
+    let { appDataActiveView, fileinfos, flow_app_proto }: {
+        appDataActiveView: string,
+        fileinfos: AppDataFileinfo[],
+        flow_app_proto: WebsocketMetadata[]
+    }  = $props();
 </script>
 
 <table class="table table-hover table-bordered">
@@ -21,7 +26,7 @@
                 <td>{data.opcode}</td>
                 <td>{data.mask}</td>
             </tr>
-            {#each Object.entries(flowData.fileinfos[app_proto]) as [k, v]}
+            {#each Object.entries(fileinfos) as [k, v]}
                 {#if v.tx_id === Number(tx_id)}
                     <FlowAppFileView appDataActiveView={appDataActiveView} index={k} fileinfo={v} />
                 {/if}

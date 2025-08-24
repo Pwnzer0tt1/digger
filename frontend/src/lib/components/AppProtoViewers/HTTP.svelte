@@ -1,12 +1,19 @@
 <script lang="ts">
+	import type { AppDataFileinfo, HTTPMetadata } from "$lib/schema";
 	import FlowAppFileView from "../FlowAppFileView.svelte";
 
-    let { appDataActiveView, flowData, app_proto, flow_app_proto } = $props();
+    let { appDataActiveView, destPort, fileinfos, app_proto, flow_app_proto }: {
+        appDataActiveView: string,
+        destPort: number | null,
+        fileinfos: AppDataFileinfo[],
+        app_proto: string,
+        flow_app_proto: HTTPMetadata[]
+    } = $props();
 </script>
 
-{#each Object.entries(flow_app_proto) as [tx_id, data]}
+{#each Object.entries(flow_app_proto as HTTPMetadata[]) as [tx_id, data]}
     <div>
-        <span class="fw-bold">{data.http_method ?? "?"} http://{data.hostname}:{data.http_port ?? flowData.flow.dest_port}{data.url ?? ""} {data.protocol ?? ""} <i class="bi bi-caret-left-fill"></i> <button class="btn btn-sm btn-info fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{app_proto}-{tx_id}" aria-expanded="false" aria-controls="collapse-{app_proto}-{tx_id}">{data.status ?? "?"}</button></span>
+        <span class="fw-bold">{data.http_method ?? "?"} http://{data.hostname}:{data.http_port ?? destPort}{data.url ?? ""} {data.protocol ?? ""} <i class="bi bi-caret-left-fill"></i> <button class="btn btn-sm btn-info fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{app_proto}-{tx_id}" aria-expanded="false" aria-controls="collapse-{app_proto}-{tx_id}">{data.status ?? "?"}</button></span>
         {#each data.request_headers as  h}
             <p class="my-0">{h.name}: {h.value}</p>
         {/each}
@@ -19,7 +26,7 @@
             </div>
         </div>
     </div>
-    {#each Object.entries(flowData.fileinfos[app_proto]) as [k, v]}
+    {#each Object.entries(fileinfos) as [k, v]}
         {#if v.tx_id === Number(tx_id)}
             <FlowAppFileView appDataActiveView={appDataActiveView} index={k} fileinfo={v} />
         {/if}

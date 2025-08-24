@@ -12,6 +12,69 @@ export const flowsListFilters = z.object({
 
 export type FlowsListFilters = z.infer<typeof flowsListFilters>;
 
+export type AlertExtraData = {
+    gid: number,
+    rev: number,
+    action: string,
+    category: string,
+    metadata: {
+        tag: string[],
+        color: string[]
+    },
+    severity: number,
+    signature: string,
+    signature_id: number
+};
+
+export type Fileinfo = {
+    gaps: boolean,
+    size: number,
+    state: string,
+    tx_id: number,
+    sha256: string,
+    stored: boolean,
+    file_id: number,
+    filename: string,
+    magic?: string
+};
+
+export type AppDataFileinfo = {
+    data: Blob,
+    filestore: string,
+    bytes: Uint8Array,
+    ext: string,
+    tx_id: number,
+    sha256: string,
+    filename: string,
+    magic: string,
+};
+
+export type HTTPMetadata = {
+    url: string,
+    length: number,
+    status: number,
+    hostname: string,
+    protocol: string,
+    http_port: number,
+    http_method: string,
+    http_user_agent: string,
+    request_headers: {
+        name: string,
+        value: string
+    }[],
+    response_headers: {
+        name: string,
+        value: string
+    }[],
+    http_content_type: string
+};
+
+export type WebsocketMetadata = {
+    fin: boolean,
+    mask?: number,
+    opcode: string
+};
+
 export type Flow = {
     id: string,
     ts_start: string,

@@ -1,7 +1,7 @@
 <!--
-Copyright (C) 2023-2024  ANSSI
-SPDX-License-Identifier: CC0-1.0
-Modified by Pwnzer0tt1
+Copyright (C) 2025 Pwnzer0tt1
+This file has been modified from the original version.
+Licensed under GPL-3.0
 -->
 
 # Digger
@@ -13,24 +13,24 @@ Modified by Pwnzer0tt1
 - [Getting started](#getting-started)
 - [Usage](#usage)
 - [FAQs](#faqs)
-- [Licensing](#licensing)
+- [Attribution & License](#attribution--license)
 
 ## What is Digger?
 
 Digger is a web application that offers a graphical user interface to explore
 [Suricata Extensible Event Format (EVE) outputs](https://docs.suricata.io/en/latest/output/eve/eve-json-output.html).
 Its primary focus is to help [Capture-the-Flag players](https://en.wikipedia.org/wiki/Capture_the_flag_(cybersecurity))
-analyse network flows during stressful and time-limited attack-defense games such as
+analyse network flows during stressful and time-limited attack-defense games, such as
 [FAUSTCTF](https://faustctf.net/), [ENOWARS](https://enowars.com/), [CyberChallengeIT](https://cyberchallenge.it/) or [ECSC](https://ecsc.eu/).
 Digger is a fork of [Shovel](https://github.com/FCSC-FR/shovel) made by Pwnzer0tt1.
 
-![Digger](./.github/demo.webp)
+![Digger](./.github/Preview.png)
 
 You might also want to have a look at these other awesome traffic analyser tools:
 - <https://github.com/secgroup/flower> (first commit in 2018)
 - <https://github.com/eciavatta/caronte> (first commit in 2020)
 - <https://github.com/OpenAttackDefenseTools/tulip> (fork from flower in May 2022)
-- <https://github.com/FCSC-FR/shovel> (repository on which Digger is based)
+- **<https://github.com/FCSC-FR/shovel> (repository on which Digger is based)**
 
 Compared to these traffic analyser tools, excluding Shovel, Digger only relies on Suricata while
 making opinionated choices for the frontend. This has a few nice implications:
@@ -74,6 +74,18 @@ or pcap    │  Suricata with:               │       │                    �
 - CTF related settings (e.g. tick length, datetime start) are stored using a JSON file that can be edited from the webapp.
 - A `start.py` that automatically starts Digger
 - A single PostgreSQL container is used in place of two separated SQLite files
+- Digger is distributed with a GPL-3.0 license.
+
+### Commonalities with Shovel
+Most of the original code of Shovel has been completly changed.
+
+The webapp now inside the folder [frontend](/frontend/) shares some similiarities but none of the original files remained, everything is new.
+
+The part related to Suricata is what remain in common with Shovel, except for the use of PostgreSQL as database and Diesel ORM as SQL driver. Some minor changes were also made like: we use `crossbeam` instead of `mspc`, remove `regex_lite` and use `serde_json`.
+
+An important part that remained the same is the template used for registering the plugins. Thanks to [FCSC-FR](https://github.com/FCSC-FR), in particular [erdnaxe](https://github.com/erdnaxe), we figured how to use Suricata 8.0.0 in Digger without breaking stuff.
+
+The files that are currently in common with Shovel are all found inside [suricata](./suricata/), if a file was modified by us you will find a comment that specify that.
 
 
 ## Getting started
@@ -318,32 +330,33 @@ Common command examples:
 
 ### Customizing services
 
-To setup the services mapping, you can edit the `.env` file by hand. In alternative, once Digger is started you can customize the configuration directly from the web interface.
+You can customize the configuration directly from the web interface, all the changes are saved in file called `ctf_config.json`.
 
 Click on the settings icon in the top left corner to open the **Service Manager** modal. Here you can add:
 
 - service name,
-- port numbers (one or more, separated by commas or new lines),
+- ip:port used (we support services with multiple IPs and ports),
 - colour (helps to identify the service in the flow list).
 
-After adding a service, you can also edit it by clicking on the pencil icon next to the service name.
+![ServicesManager](./.github/ServicesManager.png)
 
 > [!WARNING]
 > Note that if Digger is restarted without the `--no-clean` flag, the configuration in the web interface will be lost. Use `./start.py start --no-clean` to preserve existing configuration.
 
-### Auto Refresh
+### Settings
 
-Digger includes an auto-refresh feature that automatically refreshes the flow list with an interval specified by the `REFRESH_RATE` parameter in the `.env` file. After updating, the interface will scroll to the previously selected flow (if any).
+In order to work properly and display correct informations Digger requires specific configuration about the CTF you are playing:
+- tick length (default to 120 seconds)
+- start datetime (default to present datetime)
+- end datetime (default to present datetime + 8 hours)
 
-The default value of `REFRESH_RATE` can be set during Digger startup using the `--refresh-rate` parameter:
-
-```bash
-./start.py start --refresh-rate 60
-```
-
-You can also update this value at runtime from the **Service Manager** in the web interface. The new value will be saved locally in the user's browser to not interfere with other users.
+Digger includes an auto-refresh feature that automatically refreshes the flow list with an interval specified in the configuration. After updating, the interface will scroll to the previously selected flow (if any), by default is every 120 seconds. The auto-refresh is client specific, that means every user can decide the refresh interval.
 
 The auto-refresh feature can be toggled by clicking the **Auto-Update** button in the top left corner of the web interface.
+
+You can update this values at runtime from **Settings** in the web interface.
+
+![Settings](./.github/Settings.png)
 
 ## FAQs
 
@@ -402,17 +415,16 @@ using:
 pkill -USR2 suricata
 ```
 
-## Licensing
-Most of the original code of Shovel has been completly changed.
+## Attribution & License
+This project is a fork of [Shovel](https://github.com/FCSC-FR/shovel), which included code under
+the following licenses:
 
-The webapp now inside the folder [frontend](/frontend/) shares some similiarities but none of the original files remained, everything is new.
+- [CC0 1.0 Universal](./Shovel-LICENSES/CC0-1.0.txt)
+- [MIT License](./Shovel-LICENSES/MIT.txt)
+- [GNU General Public License, version 2.0 or later](./Shovel-LICENSES/GPL-2.0-or-later.txt)
 
-The part related to Suricata is what remain in common with Shovel, except for the use of PostgreSQL as database and Diesel ORM as SQL driver. Some minor changes were also made like: use `crossbeam` in place of `mspc`, remove the much slower `regex_lite` and use `serde_json`.
+In accordance with the "or later" clause of the GPL-2.0-or-later license, and
+the GPL compatibility of CC0 and MIT, this fork is distributed under the terms
+of the GNU General Public License, version 3.0 (GPL-3.0).
 
-An important part that remained the same is the template used for registering the plugins. Thanks to [FCSC-FR](https://github.com/FCSC-FR) we figured how to use Suricata 8.0.0 in Digger without breaking stuff.
-
-The files in common with Shovel contain the original copyright line. If a file was edited in some way by us the line `Modified by Pwnzer0tt1` was added.
-
-The original Shovel licenses can be found [here](/Shovel-LICENSES/).
-
-Digger is distributed with a GPL-3.0 license.
+All future contributions to this repository will be licensed under [GPL-3.0](./LICENSE).

@@ -1,7 +1,11 @@
 -- Copyright (C) 2024  ANSSI
 -- Copyright (C) 2025  A. Iooss
 -- SPDX-License-Identifier: GPL-2.0-or-later
--- Modified by Pwnzer0tt1
+
+-- Modifications
+-- Copyright (C) 2025 Pwnzer0tt1
+-- This file has been modified from the original version.
+-- Licensed under GPL-3.0
 
 -- This Suricata plugin logs UDP frames data to a PostgreSQL database.
 

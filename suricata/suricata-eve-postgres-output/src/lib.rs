@@ -84,18 +84,21 @@ extern "C" fn output_write(
 ) -> c_int {
     // Handle FFI arguments
     let context = unsafe { &mut *(data as *mut Context) };
-    let text_cstr = unsafe {
-        std::ffi::CStr::from_bytes_with_nul_unchecked(std::slice::from_raw_parts(
-            buffer as *const u8,
-            buffer_len as usize + 1,
-        ))
+    let text = unsafe {
+        str::from_utf8_unchecked(
+            std::ffi::CStr::from_bytes_with_nul_unchecked(std::slice::from_raw_parts(
+                buffer.cast(),
+                buffer_len as usize + 1
+            ))
+            .to_bytes()
+        )
     };
-    let text = text_cstr.to_string_lossy().into_owned();
 
     // Send text buffer to database thread
     context.count += 1;
-    if let Err(_err) = context.tx.send(text.to_string()) {
+    if let Err(_err) = context.tx.send(text.to_owned()) {
         log::error!("Failed to send Eve record to database thread");
+        return -1;
     }
     0
 }

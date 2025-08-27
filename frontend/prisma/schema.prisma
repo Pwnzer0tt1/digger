@@ -8,7 +8,7 @@
 // !!!!!!README!!!!!!
 // Prisma ORM currently doesn't support properly optional one-to-many relations: https://github.com/prisma/prisma/issues/18058
 // The generated foreign keys are still required
-// To resolve this, at least in this case, when applying the migration the relations must be removed
+// To resolve this, at least in this case, when generating the migration the relations must be removed
 // And only inserted before generating the client
 
 generator client {
@@ -29,14 +29,13 @@ model flow {
   ts_end        BigInt
   src_ip        String
   src_port      Int?
-  src_ipport    String?
+  src_ipport    String
   dest_ip       String
   dest_port     Int?
-  dest_ipport   String?
+  dest_ipport   String
   proto         String
   app_proto     String?
-  metadata      Json?
-  extra_data    Json?
+  data          Bytes
 
   alerts        alert[]
   events        other_event[]
@@ -53,7 +52,7 @@ model other_event {
   flow_id     BigInt
   timestamp   BigInt
   event_type  String
-  extra_data  Json?
+  data        Bytes
 
   flow        flow? @relation(fields: [flow_id], references: [id])
 
@@ -62,13 +61,19 @@ model other_event {
   @@index(fields: [flow_id], name: "other_event_flow_id_idx")
 }
 
+model stats {
+  id          Int @id @default(autoincrement())
+  timestamp   BigInt
+  data        Bytes
+}
+
 model alert {
   id          Int @id @default(autoincrement())
   flow_id     BigInt
   tag         String?
   color       String?
   timestamp   BigInt
-  extra_data  Json?
+  data        Bytes
 
   flow        flow? @relation(fields: [flow_id], references: [id])
 
@@ -86,7 +91,7 @@ model raw {
   server_to_client  Int?
   blob              Bytes?
 
-  flow        flow? @relation(fields: [flow_id], references: [id])
+  flow              flow? @relation(fields: [flow_id], references: [id])
 
   @@unique([flow_id, count])
 

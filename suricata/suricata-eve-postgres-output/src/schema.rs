@@ -20,10 +20,10 @@ diesel::table! {
     alert (id) {
         id -> Int4,
         flow_id -> Int8,
-        timestamp -> Int8,
-        extra_data -> Nullable<Jsonb>,
         tag -> Nullable<Text>,
         color -> Nullable<Text>,
+        timestamp -> Int8,
+        data -> Bytea,
     }
 }
 
@@ -41,14 +41,13 @@ diesel::table! {
         ts_end -> Int8,
         src_ip -> Text,
         src_port -> Nullable<Int4>,
-        src_ipport -> Nullable<Text>,
+        src_ipport -> Text,
         dest_ip -> Text,
         dest_port -> Nullable<Int4>,
-        dest_ipport -> Nullable<Text>,
+        dest_ipport -> Text,
         proto -> Text,
         app_proto -> Nullable<Text>,
-        metadata -> Nullable<Jsonb>,
-        extra_data -> Nullable<Jsonb>,
+        data -> Bytea,
     }
 }
 
@@ -58,7 +57,7 @@ diesel::table! {
         flow_id -> Int8,
         timestamp -> Int8,
         event_type -> Text,
-        extra_data -> Nullable<Jsonb>,
+        data -> Bytea,
     }
 }
 
@@ -72,6 +71,14 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    stats (id) {
+        id -> Int4,
+        timestamp -> Int8,
+        data -> Bytea,
+    }
+}
+
 diesel::allow_tables_to_appear_in_same_query!(
     _prisma_migrations,
     alert,
@@ -79,4 +86,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     flow,
     other_event,
     raw,
+    stats,
 );

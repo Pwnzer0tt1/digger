@@ -5,14 +5,13 @@ CREATE TABLE "flow" (
     "ts_end" BIGINT NOT NULL,
     "src_ip" TEXT NOT NULL,
     "src_port" INTEGER,
-    "src_ipport" TEXT,
+    "src_ipport" TEXT NOT NULL,
     "dest_ip" TEXT NOT NULL,
     "dest_port" INTEGER,
-    "dest_ipport" TEXT,
+    "dest_ipport" TEXT NOT NULL,
     "proto" TEXT NOT NULL,
     "app_proto" TEXT,
-    "metadata" JSONB,
-    "extra_data" JSONB,
+    "data" BYTEA NOT NULL,
 
     CONSTRAINT "flow_pkey" PRIMARY KEY ("id")
 );
@@ -23,9 +22,18 @@ CREATE TABLE "other_event" (
     "flow_id" BIGINT NOT NULL,
     "timestamp" BIGINT NOT NULL,
     "event_type" TEXT NOT NULL,
-    "extra_data" JSONB,
+    "data" BYTEA NOT NULL,
 
     CONSTRAINT "other_event_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "stats" (
+    "id" SERIAL NOT NULL,
+    "timestamp" BIGINT NOT NULL,
+    "data" BYTEA NOT NULL,
+
+    CONSTRAINT "stats_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -35,7 +43,7 @@ CREATE TABLE "alert" (
     "tag" TEXT,
     "color" TEXT,
     "timestamp" BIGINT NOT NULL,
-    "extra_data" JSONB,
+    "data" BYTEA NOT NULL,
 
     CONSTRAINT "alert_pkey" PRIMARY KEY ("id")
 );
@@ -91,24 +99,3 @@ CREATE INDEX "raw_flow_id_idx" ON "raw"("flow_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "raw_flow_id_count_key" ON "raw"("flow_id", "count");
-
--- Because Prisma Schema doesn't fully support generated columns raw SQL queries must be used.
--- PostgreSQL generated columns require immutable values which is not guaranteed by timestamp function.
-
-CREATE FUNCTION set_ts_fn() RETURNS trigger AS $$
-BEGIN
-	UPDATE flow SET src_ipport = src_ip || (CASE WHEN src_port IS NULL THEN '' ELSE ':' || src_port END);
-	UPDATE flow SET dest_ipport = dest_ip || (CASE WHEN dest_port IS NULL THEN '' ELSE ':' || dest_port END);
-
-	RETURN new;
-END
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER set_ts AFTER INSERT ON flow FOR each ROW EXECUTE PROCEDURE set_ts_fn();
-
-
-ALTER TABLE alert DROP COLUMN tag;
-ALTER TABLE alert ADD COLUMN tag TEXT GENERATED ALWAYS AS (extra_data#>>'{metadata, tag, 0}') STORED;
-
-ALTER TABLE alert DROP COLUMN color;
-ALTER TABLE alert ADD COLUMN color TEXT GENERATED ALWAYS AS (extra_data#>>'{metadata, color, 0}') STORED;

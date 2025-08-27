@@ -11,59 +11,107 @@ use diesel::{Connection, ConnectionError, PgConnection, QueryResult, RunQueryDsl
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use std::{thread, time};
 
-use crate::models::{NewAlert, NewOtherEvent, NewFlow};
-use crate::schema::{alert, other_event, flow};
+use crate::models::{NewAlert, NewFlow, NewOtherEvent, NewStats};
+use crate::schema::{alert, flow, other_event, stats};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 
 /// Add one Eve event to the SQL database
 fn write_event(conn: &mut PgConnection, buf: &str) -> QueryResult<usize> {
-    // Parse EVE JSON to untyped JSON object
-    // After some benchmarks, it was concluded that serde_json parsing is around 30x faster than regex_lite captures (crate originally used in shovel).
-    // regex create is generally faster compared to serde_json (1.5x-2x times) but having an already parsed JSON is more convinient.
-    // Parsing to generic type serde_json::Value is slower than parsing into a typed struct
-    // TODO: Create struct for parsing EVE JSON format
-    let Ok(eve_json): Result<serde_json::Value, serde_json::Error> = serde_json::from_str(buf) else {
-        log::warn!("Failed to parse EVE JSON.");
-        return Ok(0);
-    };
+    let (event_type, _) = match buf.split_once(r#","event_type":""#) {
+        Some((_, p)) => p,
+        None => {
+            match buf.split_once(r#", "event_type": ""#) {
+                Some((_, p)) => p,
+                None => {
+                    println!("{:?}", buf);
+                    return Ok(0);
+                }
+            }
+        }
+    }
+    .split_once('"')
+    .unwrap();
 
-    // Ignore events that don't have event_type field, such as stats.
-    let event_type = match eve_json.get("event_type") {
-        Some(v) => v.as_str().unwrap(),
-        None => return Ok(0)
+    let (_, timestamp_part) = match buf.split_once(r#""timestamp":""#) {
+        Some(s) => s,
+        None => match buf.split_once(r#""timestamp": ""#) {
+            Some(s) => s,
+            None => {
+                println!("{:?}", buf);
+                return Ok(0);
+            }
+        }
     };
-
-    let timestamp = chrono::DateTime::parse_from_str(eve_json.get("timestamp").expect("Missing timestamp.").as_str().unwrap(), "%Y-%m-%dT%H:%M:%S%.6f%z").unwrap().timestamp_micros();
-    let flow_id = match eve_json.get("flow_id") {
-        Some(v) => v.as_i64().unwrap(),
-        None => return Ok(0)
-    };
-
+    let (timestamp, _) = timestamp_part.split_once('"').unwrap();
+    let timestamp = chrono::DateTime::parse_from_str(timestamp, "%Y-%m-%dT%H:%M:%S%.6f%z").unwrap().timestamp_micros();
+    
     match event_type {
         "flow" => {
-            let src_ip = eve_json.get("src_ip").expect("Missing src_ip").as_str().unwrap();
-            let src_port: Option<i32> = match eve_json.get("src_port") {
-                Some(v) => Some(v.as_i64().unwrap().try_into().unwrap()),
-                None => None
+            let (_, flow_id_part) = buf.split_once(r#""flow_id":"#).expect("Missing flow_id field.");
+            let (flow_id, _) = flow_id_part.split_once(',').unwrap();
+            let flow_id = flow_id.parse().unwrap();
+
+            let (_, ts_start_part) = match buf.split_once(r#""start":""#) {
+                Some(v) => v,
+                None => buf.split_once(r#""start": ""#).expect("Missing start field.")
             };
-            let dest_ip = eve_json.get("dest_ip").expect("Missing dest_ip").as_str().unwrap();
-            let dest_port: Option<i32> = match eve_json.get("dest_port") {
-                Some(v) => Some(v.as_i64().unwrap().try_into().unwrap()),
+            let (ts_start, _) = ts_start_part.split_once('"').unwrap();
+            let ts_start = chrono::DateTime::parse_from_str(ts_start, "%Y-%m-%dT%H:%M:%S%.6f%z").unwrap().timestamp_micros();
+
+            let (_, ts_end_part) = match buf.split_once(r#""end":""#) {
+                Some(v) => v,
+                None => buf.split_once(r#""end": ""#).expect("Missing end field.")
+            };
+            let (ts_end, _) = ts_end_part.split_once('"').unwrap();
+            let ts_end = chrono::DateTime::parse_from_str(ts_end, "%Y-%m-%dT%H:%M:%S%.6f%z").unwrap().timestamp_micros();
+
+            let (_, src_ip_part) = buf.split_once(r#""src_ip":""#).expect("Missing src_ip field.");
+            let (src_ip, _) = src_ip_part.split_once('"').unwrap();
+
+            let mut src_ipport = src_ip.to_string() + ":";
+
+            let src_port = match buf.split_once(r#""src_port":"#) {
+                Some((_, s)) => match s.split_once(',') {
+                    Some((s, _)) => {
+                        src_ipport += s;
+                        Some(s.parse().unwrap())
+                    },
+                    None => None
+                },
                 None => None
             };
 
-            let proto = eve_json.get("proto").unwrap().as_str().unwrap();
-            let app_proto = match eve_json.get("app_proto") {
-                Some(v) => Some(v.as_str().unwrap()),
+            let (_, dest_ip_part) = buf.split_once(r#""dest_ip":""#).expect("Missing dest_ip field.");
+            let (dest_ip, _) = dest_ip_part.split_once('"').unwrap();
+
+            let mut dest_ipport = dest_ip.to_string() + ":";
+
+            let dest_port = match buf.split_once(r#""dest_port":"#) {
+                Some((_, s)) => match s.split_once(',') {
+                    Some((s, _)) => {
+                        dest_ipport += s;
+                        Some(s.parse().unwrap())
+                    },
+                    None => None
+                },
                 None => None
             };
-            let metadata = eve_json.get("metadata").cloned();
-            let extra_data = eve_json.get("flow").cloned();
 
-            let ts_start = chrono::DateTime::parse_from_str(extra_data.as_ref().unwrap().get("start").expect("Missing start timestamp.").as_str().unwrap(), "%Y-%m-%dT%H:%M:%S%.6f%z").unwrap().timestamp_micros();
-            let ts_end = chrono::DateTime::parse_from_str(extra_data.as_ref().unwrap().get("end").expect("Missing end timestamp.").as_str().unwrap(), "%Y-%m-%dT%H:%M:%S%.6f%z").unwrap().timestamp_micros();
+            let (_, proto_part) = match buf.split_once(r#""proto":""#) {
+                Some(v) => v,
+                None => buf.split_once(r#""proto": ""#).expect("Missing proto field.")
+            };
+            let (proto, _) = proto_part.split_once('"').unwrap();
+
+            let app_proto = match buf.split_once(r#""app_proto":""#) {
+                Some((_, s)) => match s.split_once('"') {
+                    Some((s, _)) => Some(s),
+                    None => None
+                },
+                None => None
+            };
 
             let new_flow = NewFlow {
                 id: flow_id,
@@ -71,12 +119,13 @@ fn write_event(conn: &mut PgConnection, buf: &str) -> QueryResult<usize> {
                 ts_end,
                 src_ip,
                 src_port,
+                src_ipport: &src_ipport,
                 dest_ip,
                 dest_port,
+                dest_ipport: &dest_ipport,
                 proto,
                 app_proto,
-                metadata,
-                extra_data,
+                data: buf.as_bytes()
             };
 
             diesel::insert_into(flow::table)
@@ -85,10 +134,33 @@ fn write_event(conn: &mut PgConnection, buf: &str) -> QueryResult<usize> {
                 .execute(conn)
         },
         "alert" => {
+            let (_, flow_id_part) = buf.split_once(r#""flow_id":"#).expect("Missing flow_id field.");
+            let (flow_id, _) = flow_id_part.split_once(',').unwrap();
+            let flow_id = flow_id.parse().unwrap();
+
+            
+            let tag: Option<&str> = match buf.split_once(r#""tag":[""#) {
+                Some((_, s)) => match s.split_once('"') {
+                    Some((s, _)) => Some(s),
+                    None => None
+                },
+                None => None
+            };
+
+            let color: Option<&str> = match buf.split_once(r#""color":[""#) {
+                Some((_, s)) => match s.split_once('"') {
+                    Some((s, _)) => Some(s),
+                    None => None
+                },
+                None => None
+            };
+
             let new_alert = NewAlert {
                 flow_id,
                 timestamp,
-                extra_data: eve_json.get("alert").cloned()
+                tag,
+                color,
+                data: buf.as_bytes()
             };
 
             diesel::insert_into(alert::table)
@@ -96,12 +168,26 @@ fn write_event(conn: &mut PgConnection, buf: &str) -> QueryResult<usize> {
                 .on_conflict_do_nothing()
                 .execute(conn)
         },
+        "stats" => {
+            let new_stats= NewStats {
+                timestamp,
+                data: buf.as_bytes()
+            };
+
+            diesel::insert_into(stats::table)
+                .values(&new_stats)
+                .execute(conn)
+        },
         _ => {
+            let (_, flow_id_part) = buf.split_once(r#""flow_id":"#).expect("Missing flow_id field.");
+            let (flow_id, _) = flow_id_part.split_once(',').unwrap();
+            let flow_id = flow_id.parse().unwrap();
+
             let new_other_event = NewOtherEvent {
                 flow_id,
                 timestamp,
-                event_type: event_type.to_string(),
-                extra_data: eve_json.get(event_type).cloned()
+                event_type,
+                data: buf.as_bytes()
             };
 
             diesel::insert_into(other_event::table)

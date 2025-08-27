@@ -86,6 +86,7 @@ extern "C" fn filedata_log(
         let filedata = Filedata { blob, sha256 };
         if let Err(_err) = context.tx.send(filedata) {
             log::error!("Failed to send filedata to database thread");
+            return -1;
         }
     }
     0
@@ -116,7 +117,7 @@ extern "C" fn filedata_thread_init(
     }));
 
     unsafe {
-        *thread_data = context_ptr as *mut _;
+        *thread_data = context_ptr.cast();
     }
     0
 }
@@ -125,7 +126,7 @@ extern "C" fn filedata_thread_deinit(
     _thread_vars: *mut *mut c_void,
     thread_data: *mut *mut c_void,
 ) {
-    let context = unsafe { Box::from_raw(thread_data as *mut Context) };
+    let context = unsafe { Box::from_raw(thread_data.cast::<Context>()) };
     log::info!("PostgreSQL output finished: count={}", context.count);
     std::mem::drop(context);
 }

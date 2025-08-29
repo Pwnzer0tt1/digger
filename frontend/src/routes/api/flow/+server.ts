@@ -91,7 +91,6 @@ export const GET: RequestHandler = async ({ url, locals }) => {
             dest_port: true,
             dest_ipport: true,
             app_proto: true,
-            metadata: true,
             alerts: {
                 select: {
                     tag: true

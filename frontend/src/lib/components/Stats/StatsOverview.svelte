@@ -40,5 +40,5 @@
         <h3><span class="badge text-bg-primary">FLOWS: {flowsNum}</span></h3>
         <h3><span class="badge text-bg-danger"><i class="bi bi-flag-fill"></i> FLAGS OUT: {flagsOut.length}</span></h3>
     </div>
-    <canvas bind:this={ctx}></canvas>
+    <canvas bind:this={ctx} style="height: 500px;"></canvas>
 </div>

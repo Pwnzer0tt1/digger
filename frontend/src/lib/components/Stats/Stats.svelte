@@ -3,10 +3,11 @@
 	import Toast from "../Toast.svelte";
 	import StatsOverview from "./StatsOverview.svelte";
 	import StatsServices from "./StatsServices.svelte";
+	import StatsSuricata from "./StatsSuricata.svelte";
 
     let toast: Toast;
 
-    let activeView: "overview" | "services" = $state("overview");
+    let activeView: "overview" | "services" | "suricata" = $state("overview");
 
     let data = $derived.by(async () => {
         const res = await fetch("/api/stats");
@@ -24,6 +25,9 @@
             </li>
             <li class="nav-item">
                 <button onclick={() => activeView = "services"} class="nav-link {activeView === "services" ? "active" : ""}">Services</button>
+            </li>
+            <li class="nav-item">
+                <button onclick={() => activeView = "suricata"} class="nav-link {activeView === "suricata" ? "active" : ""}">Suricata</button>
             </li>
         </ul>
         <button onclick={() => ctfConfig.hideSideBar = !ctfConfig.hideSideBar} class="ms-auto btn btn-outline-secondary" aria-label="Fullscreen">
@@ -47,6 +51,8 @@
                 <StatsOverview flagsOut={data.flagsOut} flowsNum={data.flowsNum} />
             {:else if activeView === "services"}
                 <StatsServices flagsOut={data.flagsOut} flowsNum={data.flowsNum} flagsOutFlows={data.flagsOutFlows} />
+            {:else if activeView === "suricata"}
+                <StatsSuricata />
             {/if}
         {/await}
     </div>

@@ -28,6 +28,9 @@
             case "html":
                 editor.session.setMode("ace/mode/html");
                 break;
+            case "js":
+                editor.session.setMode("ace/mode/javascript");
+                break;
             default:
                 editor.session.setMode("ace/mode/text");
                 break;

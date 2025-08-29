@@ -67,7 +67,7 @@
             flow: Flow,
             fileinfo?: Fileinfo[],
             alert?: {
-                extra_data: AlertExtraData,
+                data: AlertExtraData,
                 color: string
             }[],
             anomaly: {
@@ -88,8 +88,8 @@
             [key: string]: any
         } = await res.json();
 
-        const dateStart = json.flow.extra_data?.start.split("T").join(", ");
-        const dateEnd = json.flow.extra_data?.end.split("T").join(", ");
+        const dateStart = json.flow.data.start.split("T").join(", ");
+        const dateEnd = json.flow.data.end.split("T").join(", ");
         const start_ts = Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000);
         const tick = ((Number(json.flow.ts_start) / 1000000 - start_ts) / ctfConfig.config.tick_length).toFixed(3);
 
@@ -215,8 +215,8 @@
             </div>
             <div class="flex-grow-1 card p-2 border-secondary">
                 <p class="my-0">{flowData.flow.proto} flow from {flowData.flow.src_ipport} to {flowData.flow.dest_ipport}</p>
-                <p class="my-0"><i class="bi bi-arrow-right"></i> {flowData.flow.extra_data.pkts_toserver} packets ({flowData.flow.extra_data.bytes_toserver} bytes)</p>
-                <p class="my-0"><i class="bi bi-arrow-left"></i> {flowData.flow.extra_data.pkts_toclient} packets ({flowData.flow.extra_data.bytes_toclient} bytes)</p>
+                <p class="my-0"><i class="bi bi-arrow-right"></i> {flowData.flow.data.pkts_toserver} packets ({flowData.flow.data.bytes_toserver} bytes)</p>
+                <p class="my-0"><i class="bi bi-arrow-left"></i> {flowData.flow.data.pkts_toclient} packets ({flowData.flow.data.bytes_toclient} bytes)</p>
             </div>
             <div class="d-flex align-items-stretch">
                 <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
@@ -236,8 +236,8 @@
         {#if flowData.alerts}
             <div class="vstack gap-3">
                 {#each flowData.alerts as a}
-                    {#if a.extra_data.signature !== "tag" && a.extra_data.signature !== ""}
-                        <div class="card p-2 border-{a.color}">{a.extra_data.signature}</div>
+                    {#if a.data.signature !== "tag" && a.data.signature !== ""}
+                        <div class="card p-2 border-{a.color}">{a.data.signature}</div>
                     {/if}
                 {/each}
             </div>
@@ -298,7 +298,7 @@
         {#await rawFlowData}
             Loading...
         {:then rawFlowData}
-            {#if (flowData.flow.proto === "TCP" || flowData.flow.proto === "UDP") && flowData.flow.extra_data.state !== "new"}
+            {#if (flowData.flow.proto === "TCP" || flowData.flow.proto === "UDP") && flowData.flow.data.state !== "new"}
                 <div class="accordion" id="accordion-raw">
                     <div class="accordion-item border-primary">
                         <div class="accordion-header hstack gap-3 bg-body-tertiary p-1 px-3 rounded">

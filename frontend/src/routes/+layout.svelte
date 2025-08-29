@@ -12,6 +12,7 @@
 	import "ace-builds/src-min-noconflict/mode-html.js";
 	import "ace-builds/src-min-noconflict/mode-text.js";
 	import "ace-builds/src-min-noconflict/mode-python.js";
+    import "ace-builds/src-min-noconflict/mode-javascript.js";
 
     // Prettier
     import "prettier/standalone.js";

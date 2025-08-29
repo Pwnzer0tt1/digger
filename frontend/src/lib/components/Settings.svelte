@@ -8,21 +8,21 @@
     let start_date = $state(ctfConfig.config.start_date);
     let end_date = $state(ctfConfig.config.end_date);
     let tick_length = $state(ctfConfig.config.tick_length);
-    let refresh_rate = $state(ctfConfig.config.refresh_rate);
+    let refresh_rate = $state(ctfConfig.refreshRate);
     async function updateSettings(e: any) {
         const res = await fetch("/api/config", {
             method: "POST",
             body: JSON.stringify({
                 start_date,
                 end_date,
-                tick_length,
-                refresh_rate
+                tick_length
             }),
             headers: {
                 "Content-Type": "application/json"
             }
         });
 
+        ctfConfig.refreshRate = refresh_rate;
         if (res.ok) {
             toast.show("success", "Settings updated");
             ctfConfig.config =  await res.json();

@@ -21,7 +21,7 @@ services:
       - "./input_pcaps:/input_pcaps:ro" # remove to prevent users from downloading pcaps
       - "./suricata/output:/suricata/output:ro"
     ports:
-      - 0.0.0.0:3000:3000
+      - 0.0.0.0:8000:8000
 
   postgres:
     image: postgres:alpine

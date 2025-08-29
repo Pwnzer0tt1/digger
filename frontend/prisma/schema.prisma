@@ -4,6 +4,13 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+
+// !!!!!!README!!!!!!
+// Prisma ORM currently doesn't support properly optional one-to-many relations: https://github.com/prisma/prisma/issues/18058
+// The generated foreign keys are still required
+// To resolve this, at least in this case, when generating the migration the relations must be removed
+// And only inserted before generating the client
+
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -22,22 +29,17 @@ model flow {
   ts_end        BigInt
   src_ip        String
   src_port      Int?
-  src_ipport    String?
+  src_ipport    String
   dest_ip       String
   dest_port     Int?
-  dest_ipport   String?
-  pcap_filename String?
+  dest_ipport   String
   proto         String
   app_proto     String?
-  metadata      Json?
-  extra_data    Json?
+  data          Bytes
 
-  fileinfos     fileinfo[]
-  app_events    app_event[]
-  anomalies     anomaly[]
   alerts        alert[]
+  events        other_event[]
   raws          raw[]
-
 
   @@index(fields: [ts_start], name: "flow_ts_start_idx")
   @@index(fields: [app_proto], name: "flow_app_proto_idx")
@@ -45,44 +47,24 @@ model flow {
   @@index(fields: [dest_ipport], name: "flow_dest_ipport_idx")
 }
 
-model fileinfo {
+model other_event {
   id          Int @id @default(autoincrement())
   flow_id     BigInt
   timestamp   BigInt
-  extra_data  Json?
+  event_type  String
+  data        Bytes
 
-  flow        flow @relation(fields: [flow_id], references: [id])
+  flow        flow? @relation(fields: [flow_id], references: [id])
 
-  @@unique([flow_id, timestamp])
+  @@unique([flow_id, event_type, timestamp])
 
-  @@index(fields: [flow_id], name: "fileinfo_flow_id_idx")
+  @@index(fields: [flow_id], name: "other_event_flow_id_idx")
 }
 
-model app_event {
+model stats {
   id          Int @id @default(autoincrement())
-  flow_id     BigInt
   timestamp   BigInt
-  app_proto   String
-  extra_data  Json?
-
-  flow        flow @relation(fields: [flow_id], references: [id])
-
-  @@unique([flow_id, app_proto, timestamp])
-
-  @@index(fields: [flow_id], name: "app_event_flow_id_idx")
-}
-
-model anomaly {
-  id          Int @id @default(autoincrement())
-  flow_id     BigInt
-  timestamp   BigInt
-  extra_data  Json?
-
-  flow        flow @relation(fields: [flow_id], references: [id])
-
-  @@unique([flow_id, timestamp])
-
-  @@index(fields: [flow_id], name: "anomaly_flow_id_idx")
+  data        Bytes
 }
 
 model alert {
@@ -91,9 +73,9 @@ model alert {
   tag         String?
   color       String?
   timestamp   BigInt
-  extra_data  Json?
+  data        Bytes
 
-  flow        flow @relation(fields: [flow_id], references: [id])
+  flow        flow? @relation(fields: [flow_id], references: [id])
 
   @@unique([flow_id, tag])
 
@@ -101,8 +83,7 @@ model alert {
   @@index(fields: [flow_id], name: "alert_flow_id_idx")
 }
 
-
-// Payload tables
+// Payload table
 model raw {
   id                Int @id @default(autoincrement())
   flow_id           BigInt
@@ -110,9 +91,14 @@ model raw {
   server_to_client  Int?
   blob              Bytes?
 
-  flow              flow @relation(fields: [flow_id], references: [id])
+  flow              flow? @relation(fields: [flow_id], references: [id])
 
   @@unique([flow_id, count])
 
   @@index(fields: [flow_id], name: "raw_flow_id_idx")
+}
+
+model filedata {
+  sha256  Bytes @id
+  blob    Bytes
 }

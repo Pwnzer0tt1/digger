@@ -8,5 +8,6 @@
         <p>Use <kbd>Esc</kbd> key to de-select the current flow.</p>
         <p>Use <kbd>Shift</kbd> + <kbd>Left Click</kbd> to select bytes in the hexdump viewer.</p>
     </ul>
+    <p class="fw-light my-0">A fork of <a href="https://github.com/FCSC-FR/shovel">Shovel</a>.</p>
     <p>Made by <a href="https://github.com/pwnzer0tt1/shovel" class="fw-bold">Pwnzer0tt1</a>.</p>
 </div>

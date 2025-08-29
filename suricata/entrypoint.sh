@@ -2,6 +2,12 @@
 # Copyright (C) 2024  ANSSI
 # SPDX-License-Identifier: CC0-1.0
 
+# Modifications
+# Copyright (C) 2025 Pwnzer0tt1
+# This file has been modified from the original version.
+# Licensed under GPL-3.0
+
+
 # pipefail: exit Suricata if pcap-over-ip connection ends
 set -euo pipefail
 
@@ -12,38 +18,43 @@ if [ -n "${PCAP_OVER_IP+x}" ]; then
 fi
 
 # Arguments override default Suricata configuration,
-# see https://github.com/OISF/suricata/blob/suricata-7.0.5/suricata.yaml.in
+# see https://github.com/OISF/suricata/blob/suricata-8.0.0/suricata.yaml.in
+# and `suricata --dump-config`
+mkdir -p suricata/output/pcaps
 eval "$SURICATA_CMD" \
     --runmode=single --no-random -k none \
     -l suricata/output \
     --set default-rule-path=suricata/rules \
     --set plugins.0=suricata/libeve_postgres_output.so \
+    --set plugins.1=suricata/libfiledata_postgres_output.so \
     --set outputs.0.fast.enabled=no \
-    --set outputs.1.eve-log.filetype=sqlite \
-    --set outputs.1.eve-log.pcap-file="${PCAP_FILE:=true}" \
+    --set outputs.1.eve-log.filetype=postgres \
+    --set outputs.1.eve-log.types.2.anomaly.types.decode=yes \
+    --set outputs.1.eve-log.types.2.anomaly.types.stream=yes \
+    --set outputs.1.eve-log.types.2.anomaly.types.applayer=yes \
     --set outputs.1.eve-log.types.3.http.dump-all-headers=both \
-    --set outputs.1.eve-log.types.6.files.force-hash.0=sha256 \
-    --set outputs.1.eve-log.types.21.dhcp.extended=yes \
-    --set outputs.1.eve-log.types.23.mqtt.passwords=yes \
-    --set outputs.1.eve-log.types.25.pgsql.enabled=yes \
-    --set outputs.1.eve-log.types.25.pgsql.passwords=yes \
-    --set outputs.7.stats.enabled=no \
-    --set outputs.9.file-store.enabled=yes \
-    --set outputs.9.file-store.force-filestore=yes \
-    --set outputs.9.file-store.stream-depth=0 \
-    --set outputs.12.lua.enabled=yes \
-    --set outputs.12.lua.scripts.0=suricata/suricata-tcp-payload-postgres-output.lua \
-    --set outputs.12.lua.scripts.1=suricata/suricata-udp-payload-postgres-output.lua \
+    --set outputs.1.eve-log.types.7.files.force-hash.0=sha256 \
+    --set outputs.1.eve-log.types.28.mqtt.passwords=yes \
+    --set outputs.1.eve-log.types.31.pgsql.enabled=yes \
+    --set outputs.1.eve-log.types.31.pgsql.passwords=yes \
+    --set outputs.3.pcap-log.enabled=${PCAP_LOG:=yes} \
+    --set outputs.3.pcap-log.limit=33554432 \
+    --set outputs.3.pcap-log.compression=lz4 \
+    --set outputs.3.pcap-log.dir=pcaps \
+    --set outputs.9.lua.enabled=yes \
+    --set outputs.9.lua.cpath=/usr/lib/lua/5.4/?.so \
+    --set outputs.9.lua.scripts.0=suricata/suricata-tcp-payload-postgres-output.lua \
+    --set outputs.9.lua.scripts.1=suricata/suricata-udp-payload-postgres-output.lua \
     --set app-layer.protocols.pgsql.enabled=yes \
     --set app-layer.protocols.modbus.enabled=yes \
     --set app-layer.protocols.dnp3.enabled=yes \
     --set app-layer.protocols.enip.enabled=yes \
-    --set app-layer.protocols.sip.enabled=yes \
-    --set app-layer.protocols.http.libhtp.default-config.request-body-limit=50mb \
+    --set app-layer.protocols.http.libhtp.default-config.request-body-limit=52428800 \
     --set app-layer.protocols.http.libhtp.default-config.response-body-limit=0 \
     --set stream.reassembly.depth=50mb \
     --set flow-timeouts.tcp.established=60 \
     --set flow-timeouts.tcp.emergency-established=60 \
     --set flow-timeouts.tcp.closed=5 \
     --set flow-timeouts.tcp.emergency-closed=5 \
+    --set security.lua.allow-rules=yes \
     "$@"

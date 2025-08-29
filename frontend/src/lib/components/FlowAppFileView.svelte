@@ -15,7 +15,11 @@
             {#if appDataActiveView === "render"}
                 <div class="accordion-body p-1">
                     {#if ["gif", "jpg", "png", "svg"].includes(fileinfo.ext)}
-                        <img src={URL.createObjectURL(fileinfo.data)} alt="">
+                        <img class="img-fluid" src={URL.createObjectURL(fileinfo.data)} alt="">
+                    {:else if fileinfo.ext === "mp4"}
+                        <video class="object-fit-contain" src={URL.createObjectURL(fileinfo.data)} controls></video>
+                    {:else if fileinfo.ext === "wav"}
+                        <audio src={URL.createObjectURL(fileinfo.data)} controls></audio>
                     {:else if fileinfo.ext === "pdf"}
                         <iframe title="App data viewer" src={URL.createObjectURL(fileinfo.data)} frameborder="0"></iframe>
                     {:else if fileinfo.ext === "html"}

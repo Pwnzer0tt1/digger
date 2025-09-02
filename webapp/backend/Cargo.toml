@@ -1,0 +1,11 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+actix-web = "4"
+diesel = { version = "2.2.0", features = ["postgres"] }
+diesel_migrations = "2.2.0"
+dotenvy = "0.15"
+chrono = "0.4.41"

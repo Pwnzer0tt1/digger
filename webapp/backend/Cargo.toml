@@ -5,7 +5,10 @@ edition = "2024"
 
 [dependencies]
 actix-web = "4"
-diesel = { version = "2.2.0", features = ["postgres"] }
+actix-files = "0.6.7"
+diesel = { version = "2.2.0", features = ["postgres", "r2d2"] }
 diesel_migrations = "2.2.0"
 dotenvy = "0.15"
 chrono = "0.4.41"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

@@ -23,3 +23,4 @@ target
 # Suricata output
 output/filestore
 output/*.log
+output/pcaps/log.pcap.*.lz4

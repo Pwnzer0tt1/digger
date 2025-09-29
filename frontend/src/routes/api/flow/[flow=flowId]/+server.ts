@@ -16,11 +16,9 @@ export const GET: RequestHandler = async ({ params, locals }) => {
             src_ipport: true,
             dest_ipport: true,
             dest_port: true,
-            pcap_filename: true,
             proto: true,
             app_proto: true,
-            metadata: true,
-            extra_data: true
+            data: true
         },
         where: {
             id: BigInt(params.flow)
@@ -31,65 +29,44 @@ export const GET: RequestHandler = async ({ params, locals }) => {
         return error(404);
     }
 
+    const flowData = JSON.parse(Buffer.from(flow.data).toString());
     let result: any = {
         flow: {
             ...flow,
             id: flow.id.toString(),
             ts_start: flow.ts_start.toString(),
-            ts_end: flow.ts_end.toString()
+            ts_end: flow.ts_end.toString(),
+            data: flowData["flow"],
+            metadata: flowData["metadata"]
         }
     };
 
-    // Get associated fileinfos
-    // See https://docs.suricata.io/en/suricata-7.0.10/file-extraction/file-extraction.html
-    if (flow.app_proto) {
-        if (["http", "http2", "smtp", "ftp", "nfs", "smb"].includes(flow.app_proto)) {
-            const fileinfo = await prisma.fileinfo.findMany({
-                select: {
-                    extra_data: true
-                },
-                where: {
-                    flow_id: BigInt(params.flow)
-                },
-                orderBy: {
-                    id: "asc"
-                }
-            });
-
-            result.fileinfo = fileinfo;
+    // Get associated events
+    const events = await prisma.other_event.findMany({
+        select: {
+            event_type: true,
+            data: true
+        },
+        where: {
+            flow_id: BigInt(params.flow)
+        },
+        orderBy: {
+            id: "asc"
+        }
+    });
+    for (const e of events) {
+        if (result[e.event_type]) {
+            result[e.event_type].push(JSON.parse(Buffer.from(e.data).toString())[e.event_type]);
+        }
+        else {
+            result[e.event_type] = [JSON.parse(Buffer.from(e.data).toString())[e.event_type]];
         }
     }
 
-    // Get associated application layer(s) metadata
-    if (result.flow.app_proto !== null && result.flow.app_proto !== "failed") {
-        const appEvents = await prisma.app_event.findMany({
+    if (result.flow.data.alerted) {
+        const alerts = await prisma.alert.findMany({
             select: {
-                app_proto: true,
-                extra_data: true
-            },
-            where: {
-                flow_id: BigInt(params.flow)
-            },
-            orderBy: {
-                id: "asc"
-            }
-        });
-
-        for (const row of appEvents) {
-            if (result[row.app_proto]) {
-                result[row.app_proto].push(row.extra_data);
-            }
-            else {
-                result[row.app_proto] = [row.extra_data];
-            }
-        }
-    }
-
-    // Get associated alert
-    if (result.flow.extra_data.alerted) {
-        result.alert = await prisma.alert.findMany({
-            select: {
-                extra_data: true,
+                data: true,
                 color: true
             },
             where: {
@@ -99,20 +76,13 @@ export const GET: RequestHandler = async ({ params, locals }) => {
                 id: "asc"
             }
         });
+        result.alert = alerts.map((v) => {
+            return {
+                data: JSON.parse(Buffer.from(v.data).toString())["alert"],
+                color: v.color
+            };
+        });
     }
-
-    // Get associated anomalies
-    result.anomaly = await prisma.anomaly.findMany({
-        select: {
-            extra_data: true
-        },
-        where: {
-            flow_id: BigInt(params.flow)
-        },
-        orderBy: {
-            id: "asc"
-        }
-    });
 
     return json(result);
 };

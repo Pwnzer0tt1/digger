@@ -3,7 +3,7 @@
 	import ServicesManager from '$lib/components/ServicesManager.svelte';
 	import Settings from '$lib/components/Settings.svelte';
 	import SideBar from '$lib/components/SideBar.svelte';
-	import Stats from '$lib/components/Stats.svelte';
+	import Stats from '$lib/components/Stats/Stats.svelte';
 	import TickProgressBar from '$lib/components/TickProgressBar.svelte';
 	import WelcomePanel from '$lib/components/WelcomePanel.svelte';
 	import type { Tags } from '$lib/schema';
@@ -92,7 +92,7 @@
             if (ctfConfig.autoUpdate) {
                 getFlowsList();
             }
-        }, ctfConfig.config.refresh_rate * 1000);
+        }, ctfConfig.refreshRate * 1000);
     });
 
     onMount(() => {

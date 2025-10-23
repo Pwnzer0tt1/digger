@@ -2,6 +2,24 @@ use std::{collections::HashMap, fs::File, io::{Read, Write}};
 use chrono::Duration;
 use serde::{Deserialize, Serialize};
 
+mod routes;
+
+pub use routes::init_routes;
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NewService {
+    pub name: String,
+    pub ipports: Vec<IpPort>,
+    pub color: String
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NewCtfConfig {
+    pub start_date: String,
+    pub end_date: String,
+    pub tick_length: u32
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CtfConfig {

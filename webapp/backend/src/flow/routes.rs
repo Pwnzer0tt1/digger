@@ -160,7 +160,7 @@ async fn read_flow_pcap(req: HttpRequest, flow_id: web::Path<i64>, pool: web::Da
     
     if flow_pcap_file.is_none() {
         // Error file not found
-        return ApiError::new(404, "PCAP file not found. ".to_string()).error_response();
+        return ApiError::new(404, "PCAP file not found.".to_string()).error_response();
     }
     
     match NamedFile::open(format!("../../suricata/output/pcaps/{}", flow_pcap_file.unwrap())) {

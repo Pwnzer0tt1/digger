@@ -48,9 +48,9 @@
             </div>
         {:then data} 
             {#if activeView === "overview"}
-                <StatsOverview flagsOut={data.flagsOut} flowsNum={data.flowsNum} />
+                <StatsOverview flagsOut={data.flags_out} flowsNum={data.flows_num} />
             {:else if activeView === "services"}
-                <StatsServices flagsOut={data.flagsOut} flowsNum={data.flowsNum} flagsOutFlows={data.flagsOutFlows} />
+                <StatsServices flagsOut={data.flags_out} flowsNum={data.flows_num} flagsOutFlows={data.flags_out_flows} />
             {:else if activeView === "suricata"}
                 <StatsSuricata />
             {/if}

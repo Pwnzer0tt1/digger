@@ -25,13 +25,14 @@
         for (const r of data) {
             const tick = Math.floor((Number(r.timestamp) / 1000000 - start_ts) / ctfConfig.config.tick_length);
 
+            let j = JSON.parse(new TextDecoder().decode(Uint8Array.from(r.data)));
             statistics.push({
                 tick,
-                packets: r.data.stats.decoder.pkts,
-                bytes: r.data.stats.decoder.bytes,
-                tcp: r.data.stats.decoder.tcp,
-                udp: r.data.stats.decoder.udp,
-                app_protos: r.data.stats.app_layer.flow
+                packets: j.stats.decoder.pkts,
+                bytes: j.stats.decoder.bytes,
+                tcp: j.stats.decoder.tcp,
+                udp: j.stats.decoder.udp,
+                app_protos: j.stats.app_layer.flow
             });
         }
 

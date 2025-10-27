@@ -2,7 +2,7 @@ use actix_files::NamedFile;
 use actix_web::{get, web, HttpRequest, HttpResponse, Responder, ResponseError, Result};
 use diesel::{prelude::*, r2d2::ConnectionManager, sql_query, sql_types::Text};
 use std::{fs, sync::Mutex};
-use crate::{config::CtfConfig, error::ApiError, flow::model::{FlowData, FlowsFilters, FlowsList}, models::{Alert, AppProto, Event, Flow, RawFlowID, ReadFlowRaw, Tag, TsStartFlow}, schema};
+use crate::{config::CtfConfig, error::ApiError, flow::model::{FlowData, FlowsFilters, FlowsList, FlowsQuery}, models::{Alert, Event, Flow, RawFlowID, ReadFlowRaw, Tag}, schema};
 
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
@@ -13,11 +13,24 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
 }
 
 #[get("/api/flow")]
-async fn read_flows(filters: web::Query<FlowsFilters>, ctf_config: web::Data<Mutex<CtfConfig>>, pool: web::Data<diesel::r2d2::Pool<ConnectionManager<PgConnection>>>) -> impl Responder {
+async fn read_flows(query: web::Query<FlowsQuery>, ctf_config: web::Data<Mutex<CtfConfig>>, pool: web::Data<diesel::r2d2::Pool<ConnectionManager<PgConnection>>>) -> impl Responder {
     let ctf_config = ctf_config.lock().unwrap();
     let mut conn = pool.get().unwrap();
+    
+    let filters: FlowsFilters = match serde_json::from_str(&query.filters) {
+        Ok(v) => v,
+        Err(_) => {
+            return ApiError::new(404, "Malformed filters.".to_string()).error_response();
+        }
+    };
+    println!("{:#?}", filters);
 
-    let mut predicate = schema::flow::ts_start.eq(filters.ts_to.unwrap_or(10_000_000_000_000_000));
+    let ts_to: i64 = filters.ts_to.parse().unwrap();
+    let mut predicate = schema::flow::ts_start.lt(ts_to);
+    
+    if let Some(app_proto) = &filters.app_proto {
+        predicate.and(schema::flow::app_proto.eq(app_proto));
+    }
 
     if let Some(services) = &filters.services {
         let mut filter_services: Vec<String> = Vec::new();
@@ -35,18 +48,18 @@ async fn read_flows(filters: web::Query<FlowsFilters>, ctf_config: web::Data<Mut
         predicate.and(schema::flow::src_ipport.ne_all(filter_services.clone()).and(schema::flow::dest_ipport.ne_all(filter_services)));
     }
 
-    if let Some(tags_deny) = &filters.tags_deny {
+    if filters.tags_deny.len() > 0 {
         let tags_deny_flow_ids = schema::alert::table
-            .filter(schema::alert::tag.eq_any(tags_deny))
+            .filter(schema::alert::tag.eq_any(filters.tags_deny))
             .select(schema::alert::flow_id)
             .load::<i64>(&mut conn)
             .expect("Error while selecting alerts.");
         predicate.and(schema::flow::id.ne_all(tags_deny_flow_ids));
     }
 
-    if let Some(tags_require) = &filters.tags_require {
+    if filters.tags_require.len() > 0 {
         let tags_require_flow_ids = schema::alert::table
-            .filter(schema::alert::tag.eq_any(tags_require))
+            .filter(schema::alert::tag.eq_any(filters.tags_require))
             .select(schema::alert::flow_id)
             .load::<i64>(&mut conn)
             .expect("Error while selecting alerts.");
@@ -61,6 +74,8 @@ async fn read_flows(filters: web::Query<FlowsFilters>, ctf_config: web::Data<Mut
         predicate.and(schema::flow::id.eq_any(matching_flow_ids.iter().map(|x| x.flow_id)));
     }
 
+    println!("{:#?}", predicate);
+
     let flows = schema::flow::table
         .filter(predicate)
         .select(Flow::as_select())
@@ -72,7 +87,7 @@ async fn read_flows(filters: web::Query<FlowsFilters>, ctf_config: web::Data<Mut
     let app_protos = schema::flow::table
         .filter(schema::flow::app_proto.ne("failed"))
         .group_by(schema::flow::app_proto)
-        .select(AppProto::as_select())
+        .select(schema::flow::app_proto)
         .load(&mut conn)
         .expect("Error while selecting protos.");
 
@@ -134,8 +149,8 @@ async fn read_flow_pcap(req: HttpRequest, flow_id: web::Path<i64>, pool: web::Da
     
     let flow = schema::flow::table
         .filter(schema::flow::id.eq(flow_id))
-        .select(TsStartFlow::as_select())
-        .load(&mut conn)
+        .select(schema::flow::ts_start)
+        .load::<i64>(&mut conn)
         .expect("Error while selecting flow.");
     
     if flow.len() == 0 {
@@ -143,7 +158,7 @@ async fn read_flow_pcap(req: HttpRequest, flow_id: web::Path<i64>, pool: web::Da
         return ApiError::new(404, "Flow id not found. ".to_string()).error_response();
     }
     
-    let flow_us = flow[0].ts_start as f64 / 1000.0;
+    let flow_us = flow[0] as f64 / 1000.0;
     let mut flow_pcap_file: Option<String> = None;
     for entry in fs::read_dir("../suricata/output/pcaps").unwrap() {
         let entry = entry.unwrap();

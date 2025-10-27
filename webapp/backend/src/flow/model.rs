@@ -1,4 +1,4 @@
-use crate::models::{AppProto, Tag};
+use crate::models::{Tag};
 use serde::{Deserialize, Serialize};
 
 use crate::models::{Alert, Event, Flow};
@@ -12,18 +12,23 @@ pub struct FlowData {
 }
 
 #[derive(Deserialize)]
+pub struct FlowsQuery {
+    pub filters: String
+}
+
+#[derive(Deserialize, Debug)]
 pub struct FlowsFilters {
-    pub ts_to: Option<i64>,
+    pub ts_to: String,
     pub services: Option<Vec<String>>,
     pub app_proto: Option<String>,
     pub search: Option<String>,
-    pub tags_require: Option<Vec<String>>,
-    pub tags_deny: Option<Vec<String>>
+    pub tags_require: Vec<String>,
+    pub tags_deny: Vec<String>
 }
 
 #[derive(Serialize)]
 pub struct FlowsList {
     pub flows: Vec<Flow>,
-    pub app_protos: Vec<AppProto>,
+    pub app_protos: Vec<Option<String>>,
     pub tags: Vec<Tag>
 }

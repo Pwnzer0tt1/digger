@@ -49,13 +49,6 @@ pub struct ReadFlowRaw {
 #[derive(Queryable, Selectable, Serialize)]
 #[diesel(table_name = flow)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct TsStartFlow {
-    pub ts_start: i64
-}
-
-#[derive(Queryable, Selectable, Serialize)]
-#[diesel(table_name = flow)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Flow {
     pub id: i64,
     pub ts_start: i64,
@@ -90,13 +83,6 @@ pub struct Alert {
 pub struct Tag {
     pub tag: Option<String>,
     pub color: Option<String>
-}
-
-#[derive(Queryable, Selectable, Serialize)]
-#[diesel(table_name = flow)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct AppProto {
-    pub app_proto: Option<String>
 }
 
 #[derive(Queryable, QueryableByName, Selectable, Serialize)]

@@ -27,7 +27,7 @@
 
         flows.flows = json.flows;
         tags = json.tags;
-        appProto = json.appProto;
+        appProto = json.app_protos;
     }
 
     function flowsSelection(e: KeyboardEvent) {

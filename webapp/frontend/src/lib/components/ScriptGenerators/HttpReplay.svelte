@@ -39,6 +39,7 @@
 </script>
 
 <div id="http-replay-editor" class="rounded-bottom">
+<!--
 #!/usr/bin/env python3
 # Filename: replay-{ serviceName }-{ flowId }.py
 import json
@@ -101,4 +102,5 @@ if r.status_code != {req.status}:
     logging.error(f"Request returned wrong status code &#123;r.status_code&#125;, expected {req.status}")
 print(r.text, flush=True)
 {/each}
+-->
 </div>

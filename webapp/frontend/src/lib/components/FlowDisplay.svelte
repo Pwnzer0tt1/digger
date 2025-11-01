@@ -53,7 +53,7 @@
         let res = await fetch(`/api/flow/${selectedFlow.flow?.id}/raw`);
         let json: {
             server_to_client: string;
-            data: string;
+            blob: string;
         }[] = await res.json();
 
         return {
@@ -66,7 +66,7 @@
         let json: {
             flow: Flow,
             fileinfo?: Fileinfo[],
-            alert?: {
+            alerts?: {
                 data: AlertExtraData,
                 color: string
             }[],
@@ -88,8 +88,10 @@
             [key: string]: any
         } = await res.json();
 
-        const dateStart = json.flow.data.start.split("T").join(", ");
-        const dateEnd = json.flow.data.end.split("T").join(", ");
+        let flowData = JSON.parse(new TextDecoder().decode(Uint8Array.from(json.flow.data)));
+        json.flow.data = flowData;
+        const dateStart = flowData.flow.start.split("T").join(", ");
+        const dateEnd = flowData.flow.end.split("T").join(", ");
         const start_ts = Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000);
         const tick = ((Number(json.flow.ts_start) / 1000000 - start_ts) / ctfConfig.config.tick_length).toFixed(3);
 
@@ -98,7 +100,6 @@
         } = {};
         let fileinfos: {
             [key: string]: {
-                data: Blob,
                 ext: string,
                 filename: string,
                 filestore: string,
@@ -108,37 +109,36 @@
                 tx_id: number
             }[]
         } = {};
+        
         if (json.flow.app_proto && json.flow.app_proto !== "failed") {
-            for (const p of APP_PROTO) {
-                if (json[p]) {
-                    flowAppProto[p] = json[p];
-                    let appDataFileinfo: {
-                        data: Blob,
-                        ext: string,
-                        filename: string,
-                        filestore: string,
-                        magic: string,
-                        bytes: Uint8Array,
-                        sha256: string,
-                        tx_id: number
-                    }[] = [];
-                    for (const d of json.fileinfo ?? []) {
-                        let f = await fetch(`/api/filedata/${d.sha256}`);
-                        let ext = getExtFromMagic(d.magic ?? "");
-                        let blob = await f.clone().blob();
-                        let bytes = await f.bytes();
-                        appDataFileinfo.push({
-                            data: blob,
-                            ext,
-                            filename: d.filename,
-                            filestore: `/api/filedata/${d.sha256}`,
-                            magic: d.magic ?? "",
-                            bytes,
-                            sha256: d.sha256,
-                            tx_id: d.tx_id
-                        });
+            for (const e of json.events) {
+                if (APP_PROTO.includes(e.event_type)) {
+                    if (!flowAppProto[e.event_type]) {
+                        flowAppProto[e.event_type] = []
                     }
-                    fileinfos[p] = appDataFileinfo;
+                    if (!fileinfos[e.event_type]) {
+                        fileinfos[e.event_type] = [];
+                    }
+                    flowAppProto[e.event_type].push(JSON.parse(new TextDecoder().decode(Uint8Array.from(e.data)))[e.event_type]);
+                }
+                else {
+                    if (!fileinfos[json.flow.app_proto]) {
+                        fileinfos[json.flow.app_proto] = [];
+                    }
+                    const d = JSON.parse(new TextDecoder().decode(Uint8Array.from(e.data))).fileinfo;
+                    let ext = getExtFromMagic(d.magic ?? "");
+                    let f = await fetch(`/api/filedata/${d.sha256}`);
+                    let f_j = await f.json();
+                    let bytes = Uint8Array.from(f_j.blob);
+                    fileinfos[json.flow.app_proto].push({
+                        ext,
+                        filename: d.filename,
+                        filestore: `/api/filedata/${d.sha256}`,
+                        magic: d.magic ?? "",
+                        bytes,
+                        sha256: d.sha256,
+                        tx_id: d.tx_id
+                    });
                 }
             }
         }
@@ -148,7 +148,7 @@
             dateStart,
             dateEnd,
             tick,
-            alerts: json.alert,
+            alerts: json.alerts,
             anomalies: json.anomaly,
             flowAppProto,
             fileinfos
@@ -215,8 +215,8 @@
             </div>
             <div class="flex-grow-1 card p-2 border-secondary">
                 <p class="my-0">{flowData.flow.proto} flow from {flowData.flow.src_ipport} to {flowData.flow.dest_ipport}</p>
-                <p class="my-0"><i class="bi bi-arrow-right"></i> {flowData.flow.data.pkts_toserver} packets ({flowData.flow.data.bytes_toserver} bytes)</p>
-                <p class="my-0"><i class="bi bi-arrow-left"></i> {flowData.flow.data.pkts_toclient} packets ({flowData.flow.data.bytes_toclient} bytes)</p>
+                <p class="my-0"><i class="bi bi-arrow-right"></i> {flowData.flow.data.flow.pkts_toserver} packets ({flowData.flow.data.flow.bytes_toserver} bytes)</p>
+                <p class="my-0"><i class="bi bi-arrow-left"></i> {flowData.flow.data.flow.pkts_toclient} packets ({flowData.flow.data.flow.bytes_toclient} bytes)</p>
             </div>
             <div class="d-flex align-items-stretch">
                 <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
@@ -236,8 +236,9 @@
         {#if flowData.alerts}
             <div class="vstack gap-3">
                 {#each flowData.alerts as a}
-                    {#if a.data.signature !== "tag" && a.data.signature !== ""}
-                        <div class="card p-2 border-{a.color}">{a.data.signature}</div>
+                    {@const alert_data = JSON.parse(new TextDecoder().decode(Uint8Array.from(a.data))).alert}
+                    {#if alert_data.signature !== "tag" && alert_data.signature !== ""}
+                        <div class="card p-2 border-{a.color}">{alert_data.signature}</div>
                     {/if}
                 {/each}
             </div>
@@ -316,11 +317,11 @@
                         <div id="display-raw" class="accordion-collapse collapse show">
                             <div class="accordion-body vstack">
                                 {#each Object.entries(rawFlowData.raw) as [i, chunk]}
-                                    {@const byteArray = Uint8Array.from(atob(chunk.data), c => c.charCodeAt(0))}
+                                    {@const byteArray = Uint8Array.from(chunk.blob)}
                                     {#if rawDataActiveView === "utf8"}
-                                        <pre class="rounded p-2 {chunk.server_to_client === "0" ? "bg-danger" : ""}{chunk.server_to_client === "1" ? "bg-success" : ""}">{new TextDecoder().decode(byteArray)}</pre>
+                                        <pre class="rounded p-2 {chunk.server_to_client === 0 ? "bg-danger" : ""}{chunk.server_to_client === 1 ? "bg-success" : ""}">{new TextDecoder().decode(byteArray)}</pre>
                                     {:else if rawDataActiveView === "hex"}
-                                        <pre class="rounded p-2 {chunk.server_to_client === "0" ? "bg-danger" : ""}{chunk.server_to_client === "1" ? "bg-success" : ""}"><HexDumpViewer sha256={i} blob={byteArray} /></pre>
+                                        <pre class="rounded p-2 {chunk.server_to_client === 0 ? "bg-danger" : ""}{chunk.server_to_client === 1 ? "bg-success" : ""}"><HexDumpViewer sha256={i} blob={byteArray} /></pre>
                                     {/if}
                                 {/each}
                             </div>

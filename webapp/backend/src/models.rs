@@ -46,7 +46,7 @@ pub struct ReadFlowRaw {
     pub blob: Option<Vec<u8>>
 }
 
-#[derive(Queryable, Selectable, Serialize)]
+#[derive(Queryable, Selectable, Serialize, Identifiable)]
 #[diesel(table_name = flow)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Flow {
@@ -83,6 +83,16 @@ pub struct Alert {
 pub struct Tag {
     pub tag: Option<String>,
     pub color: Option<String>
+}
+
+#[derive(Queryable, Selectable, Serialize, Associations, Identifiable)]
+#[diesel(belongs_to(Flow))]
+#[diesel(table_name = alert)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct FlowTag {
+    pub id: i32,
+    pub tag: Option<String>,
+    pub flow_id: i64
 }
 
 #[derive(Queryable, QueryableByName, Selectable, Serialize)]

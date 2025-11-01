@@ -2,7 +2,7 @@ use actix_files::NamedFile;
 use actix_web::{get, web, HttpRequest, HttpResponse, Responder, ResponseError, Result};
 use diesel::{prelude::*, r2d2::ConnectionManager, sql_query, sql_types::Text};
 use std::{fs, sync::Mutex};
-use crate::{config::CtfConfig, error::ApiError, flow::model::{FlowData, FlowsFilters, FlowsList, FlowsQuery}, models::{Alert, Event, Flow, RawFlowID, ReadFlowRaw, Tag}, schema};
+use crate::{config::CtfConfig, error::ApiError, flow::model::{FlowData, FlowWithAlerts, FlowsFilters, FlowsList, FlowsQuery}, models::{Alert, Event, Flow, FlowTag, RawFlowID, ReadFlowRaw, Tag}, schema};
 
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
@@ -84,6 +84,18 @@ async fn read_flows(query: web::Query<FlowsQuery>, ctf_config: web::Data<Mutex<C
         .load(&mut conn)
         .expect("Error while selecting flows.");
 
+    let alerts = FlowTag::belonging_to(&flows)
+        .select(FlowTag::as_select())
+        .load(&mut conn)
+        .unwrap();
+
+    let alerts_per_flows = alerts
+        .grouped_by(&flows)
+        .into_iter()
+        .zip(flows)
+        .map(|(alerts, flow)| FlowWithAlerts { flow, alerts })
+        .collect::<Vec<FlowWithAlerts>>();
+
     let app_protos = schema::flow::table
         .filter(schema::flow::app_proto.ne("failed"))
         .group_by(schema::flow::app_proto)
@@ -99,7 +111,7 @@ async fn read_flows(query: web::Query<FlowsQuery>, ctf_config: web::Data<Mutex<C
         .expect("Error while selecting tags.");
 
     HttpResponse::Ok().json(FlowsList {
-        flows,
+        flows: alerts_per_flows,
         app_protos,
         tags
     })

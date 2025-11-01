@@ -12,8 +12,8 @@
             <button class="accordion-button rounded-start-0" type="button" data-bs-toggle="collapse" data-bs-target="#app-render-{index}" aria-expanded="true" aria-controls="collapseOne">File: {fileinfo.filename}  {fileinfo.magic}</button>
         </h2>
         <div id="app-render-{index}" class="accordion-collapse collapse show">
-            {#if appDataActiveView === "render"}
-                <div class="accordion-body p-1">
+            <div class="accordion-body p-1">
+                {#if appDataActiveView === "render"}
                     {#if ["gif", "jpg", "png", "svg"].includes(fileinfo.ext)}
                         <img class="img-fluid" src={URL.createObjectURL(fileinfo.data)} alt="">
                     {:else if fileinfo.ext === "mp4"}
@@ -23,24 +23,18 @@
                     {:else if fileinfo.ext === "pdf"}
                         <iframe title="App data viewer" src={URL.createObjectURL(fileinfo.data)} frameborder="0"></iframe>
                     {:else if fileinfo.ext === "html"}
-                        <iframe class="bg-light w-100" style="height: 40vh;" title="HTML renderer" src={URL.createObjectURL(fileinfo.data.slice(0, fileinfo.data.size, "text/html"))} frameborder="0"></iframe>
+                        <iframe class="bg-light w-100" style="height: 40vh;" title="HTML renderer" src={URL.createObjectURL(new Blob([fileinfo.bytes], { type: "text/html" }))} frameborder="0"></iframe>
                     {:else}
-                        {#await fileinfo.data.text() then t}
-                            <pre class="text-break">{t}</pre>
-                        {/await}
+                        {@const t = new TextDecoder().decode(fileinfo.bytes)}
+                        <pre class="text-break">{t}</pre>
                     {/if}
-                </div>
-            {:else if appDataActiveView === "utf8"}
-                <div class="accordion-body p-0">
-                    {#await fileinfo.data.text() then t}
-                        <TextViewer text={t} ext={fileinfo.ext} magic={fileinfo.magic} sha256={fileinfo.sha256} />
-                    {/await}
-                </div>
-            {:else if appDataActiveView === "hex"}
-                <div class="accordion-body p-0">
+                {:else if appDataActiveView === "utf8"}
+                    {@const t = new TextDecoder().decode(fileinfo.bytes)}
+                    <TextViewer text={t} ext={fileinfo.ext} magic={fileinfo.magic} sha256={fileinfo.sha256} />
+                {:else if appDataActiveView === "hex"}
                     <HexDumpViewer sha256={fileinfo.sha256} blob={fileinfo.bytes} />
-                </div>
-            {/if}
+                {/if}
+            </div>
         </div>
     </div>
 </div>

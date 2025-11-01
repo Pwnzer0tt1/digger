@@ -7,7 +7,6 @@
     
     const delay = $derived((Number(flow.ts_end) - Number(flow.ts_start)) / 1000);
     const time = $derived(new Date(Number(flow.ts_start) / 1000).toISOString().split("T")[1]);
-    
     const flowTags = $derived((flow.alerts ?? []).map((v) => v.tag));
     const appProto = $derived(flow.app_proto ?? "failed");
 

@@ -1,4 +1,4 @@
-use crate::models::{Tag};
+use crate::models::{FlowTag, Tag};
 use serde::{Deserialize, Serialize};
 
 use crate::models::{Alert, Event, Flow};
@@ -28,7 +28,14 @@ pub struct FlowsFilters {
 
 #[derive(Serialize)]
 pub struct FlowsList {
-    pub flows: Vec<Flow>,
+    pub flows: Vec<FlowWithAlerts>,
     pub app_protos: Vec<Option<String>>,
     pub tags: Vec<Tag>
+}
+
+#[derive(Serialize)]
+pub struct FlowWithAlerts {
+    #[serde(flatten)]
+    pub flow: Flow,
+    pub alerts: Vec<FlowTag>
 }

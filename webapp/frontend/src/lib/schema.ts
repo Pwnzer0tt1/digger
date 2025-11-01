@@ -39,7 +39,6 @@ export type Fileinfo = {
 };
 
 export type AppDataFileinfo = {
-    data: Blob,
     filestore: string,
     bytes: Uint8Array,
     ext: string,

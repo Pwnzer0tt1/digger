@@ -29,6 +29,7 @@
 </script>
 
 <div id="raw-replay-editor" class="rounded-bottom">
+<!--
 #!/usr/bin/env python3
 # Filename: replay-{serviceName}-{data.id}.py
 import json
@@ -86,4 +87,5 @@ data = r.recvuntil({raw_data.data.slice(-16)})
 # print(data, flush=True)
 
 r.close()
+-->
 </div>

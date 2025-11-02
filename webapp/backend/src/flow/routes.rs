@@ -16,7 +16,7 @@ pub fn init_routes(cfg: &mut web::ServiceConfig) {
 async fn read_flows(query: web::Query<FlowsQuery>, ctf_config: web::Data<Mutex<CtfConfig>>, pool: web::Data<diesel::r2d2::Pool<ConnectionManager<PgConnection>>>) -> impl Responder {
     let ctf_config = ctf_config.lock().unwrap();
     let mut conn = pool.get().unwrap();
-    
+
     let filters: FlowsFilters = match serde_json::from_str(&query.filters) {
         Ok(v) => v,
         Err(_) => {
@@ -26,10 +26,12 @@ async fn read_flows(query: web::Query<FlowsQuery>, ctf_config: web::Data<Mutex<C
     println!("{:#?}", filters);
 
     let ts_to: i64 = filters.ts_to.parse().unwrap();
-    let mut predicate = schema::flow::ts_start.lt(ts_to);
-    
+
+    let mut flows_query = schema::flow::table.into_boxed();
+    flows_query = flows_query.filter(schema::flow::ts_start.lt(ts_to));
+
     if let Some(app_proto) = &filters.app_proto {
-        predicate.and(schema::flow::app_proto.eq(app_proto));
+        flows_query = flows_query.filter(schema::flow::app_proto.eq(app_proto));
     }
 
     if let Some(services) = &filters.services {
@@ -45,7 +47,7 @@ async fn read_flows(query: web::Query<FlowsQuery>, ctf_config: web::Data<Mutex<C
         else {
             filter_services = services.to_vec();
         }
-        predicate.and(schema::flow::src_ipport.ne_all(filter_services.clone()).and(schema::flow::dest_ipport.ne_all(filter_services)));
+        flows_query = flows_query.filter(schema::flow::src_ipport.ne_all(filter_services.clone()).and(schema::flow::dest_ipport.ne_all(filter_services)));
     }
 
     if filters.tags_deny.len() > 0 {
@@ -54,7 +56,7 @@ async fn read_flows(query: web::Query<FlowsQuery>, ctf_config: web::Data<Mutex<C
             .select(schema::alert::flow_id)
             .load::<i64>(&mut conn)
             .expect("Error while selecting alerts.");
-        predicate.and(schema::flow::id.ne_all(tags_deny_flow_ids));
+        flows_query = flows_query.filter(schema::flow::id.ne_all(tags_deny_flow_ids));
     }
 
     if filters.tags_require.len() > 0 {
@@ -63,21 +65,18 @@ async fn read_flows(query: web::Query<FlowsQuery>, ctf_config: web::Data<Mutex<C
             .select(schema::alert::flow_id)
             .load::<i64>(&mut conn)
             .expect("Error while selecting alerts.");
-        predicate.and(schema::flow::id.eq_any(tags_require_flow_ids));
+        flows_query = flows_query.filter(schema::flow::id.eq_any(tags_require_flow_ids));
     }
 
     if let Some(search) = &filters.search {
-        let matching_flow_ids = sql_query("SELECT flow_id FROM raw WHERE REGEXP_LIKE(ENCODE(\"blob\", 'escape'), ?);")
+        let matching_flow_ids = sql_query("SELECT flow_id FROM raw WHERE REGEXP_LIKE(ENCODE(\"blob\", 'escape'), $1);")
             .bind::<Text, _>(search.as_str())
             .load::<RawFlowID>(&mut conn)
             .expect("Error while selecting blob.");
-        predicate.and(schema::flow::id.eq_any(matching_flow_ids.iter().map(|x| x.flow_id)));
+        flows_query = flows_query.filter(schema::flow::id.eq_any(matching_flow_ids.iter().map(|x| x.flow_id)));
     }
 
-    println!("{:#?}", predicate);
-
-    let flows = schema::flow::table
-        .filter(predicate)
+    let flows = flows_query
         .select(Flow::as_select())
         .limit(100)
         .order_by(schema::flow::ts_start.desc())

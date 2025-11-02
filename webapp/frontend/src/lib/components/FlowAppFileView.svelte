@@ -15,7 +15,7 @@
             <div class="accordion-body p-1">
                 {#if appDataActiveView === "render"}
                     {#if ["gif", "jpg", "png", "svg"].includes(fileinfo.ext)}
-                        <img class="img-fluid" src={URL.createObjectURL(fileinfo.data)} alt="">
+                        <img class="img-fluid" src={URL.createObjectURL(new Blob([fileinfo.bytes]))} alt="">
                     {:else if fileinfo.ext === "mp4"}
                         <video class="object-fit-contain" src={URL.createObjectURL(fileinfo.data)} controls></video>
                     {:else if fileinfo.ext === "wav"}

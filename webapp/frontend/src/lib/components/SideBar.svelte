@@ -46,6 +46,9 @@
         if (beforeTick) {
             flowsFilters.ts_to = String(Math.floor((beforeTick * ctfConfig.config.tick_length + Math.floor(Date.parse(ctfConfig.config.start_date) / 1000)) * 1000000));
         }
+        else {
+            flowsFilters.ts_to = undefined;
+        }
     }
 
     function changeProtocol() {

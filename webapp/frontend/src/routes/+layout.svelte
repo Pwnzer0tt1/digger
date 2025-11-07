@@ -16,6 +16,7 @@
 
     // Prettier
     import "prettier/standalone.js";
+	import { onMount } from "svelte";
 
 
     let { children } = $props();
@@ -27,10 +28,15 @@
                 let currentTheme = document.documentElement.getAttribute("data-bs-theme") || "light";
                 currentTheme = currentTheme === 'light' ? 'dark' : 'light';
                 document.documentElement.setAttribute('data-bs-theme', currentTheme);
+                localStorage.setItem('theme', currentTheme)
                 e.preventDefault();
             }
         }
     }
+
+    onMount(() => {
+        document.documentElement.setAttribute('data-bs-theme', localStorage.getItem('theme') || "light");
+    });
 </script>
 
 <svelte:document onkeydown={toggleTheme} />

@@ -15,6 +15,8 @@ async fn main() -> std::io::Result<()> {
     ctf_config
         .load("./ctf_config.json")
         .expect("IO error while loading CTF configuration.");
+    ctf_config.save("./ctf_config.json").expect("Error: Can't save JSON to `ctf_config.json`.");
+    let ctf_config = web::Data::new(Mutex::new(ctf_config));
 
     let static_files = String::from("../frontend/build");
 
@@ -25,7 +27,7 @@ async fn main() -> std::io::Result<()> {
             .configure(stats::init_routes)
             .configure(flow::init_routes)
             .app_data(web::Data::new(pool.clone()))
-            .app_data(web::Data::new(Mutex::new(ctf_config.clone())));
+            .app_data(ctf_config.clone());
 
         if cfg!(not(debug_assertions)) {
             return app.service(

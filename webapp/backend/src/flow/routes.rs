@@ -23,9 +23,11 @@ async fn read_flows(query: web::Query<FlowsQuery>, ctf_config: web::Data<Mutex<C
             return ApiError::new(404, "Malformed filters.".to_string()).error_response();
         }
     };
-    println!("{:#?}", filters);
 
-    let ts_to: i64 = filters.ts_to.parse().unwrap();
+    let ts_to: i64 = match filters.ts_to {
+        Some(v) => v.parse().unwrap(),
+        None => 10_000_000_000_000_000
+    };
 
     let mut flows_query = schema::flow::table.into_boxed();
     flows_query = flows_query.filter(schema::flow::ts_start.lt(ts_to));
@@ -43,11 +45,12 @@ async fn read_flows(query: web::Query<FlowsQuery>, ctf_config: web::Data<Mutex<C
                     filter_services.push(ipp.to_string());
                 }
             }
+            flows_query = flows_query.filter(schema::flow::src_ipport.ne_all(filter_services.clone()).and(schema::flow::dest_ipport.ne_all(filter_services)));
         }
         else {
             filter_services = services.to_vec();
+            flows_query = flows_query.filter(schema::flow::src_ipport.eq_any(filter_services.clone()).or(schema::flow::dest_ipport.eq_any(filter_services)));
         }
-        flows_query = flows_query.filter(schema::flow::src_ipport.ne_all(filter_services.clone()).and(schema::flow::dest_ipport.ne_all(filter_services)));
     }
 
     if filters.tags_deny.len() > 0 {
@@ -174,8 +177,8 @@ async fn read_flow_pcap(req: HttpRequest, flow_id: web::Path<i64>, pool: web::Da
     for entry in fs::read_dir("../suricata/output/pcaps").unwrap() {
         let entry = entry.unwrap();
         let filename = entry.file_name().into_string().unwrap();
-        let (pcap_us, _) = filename.split_once(".").unwrap();
-        let pcap_us: f64 = pcap_us.parse().unwrap();
+        let strs: Vec<&str> = filename.split(".").collect();
+        let pcap_us: f64 = strs[2].parse().unwrap();
         
         if pcap_us > flow_us {
             break;

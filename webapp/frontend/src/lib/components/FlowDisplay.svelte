@@ -128,8 +128,7 @@
                     const d = JSON.parse(new TextDecoder().decode(Uint8Array.from(e.data))).fileinfo;
                     let ext = getExtFromMagic(d.magic ?? "");
                     let f = await fetch(`/api/filedata/${d.sha256}`);
-                    let f_j = await f.json();
-                    let bytes = Uint8Array.from(f_j.blob);
+                    let bytes = await f.bytes();
                     fileinfos[json.flow.app_proto].push({
                         ext,
                         filename: d.filename,

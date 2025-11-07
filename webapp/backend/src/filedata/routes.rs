@@ -20,5 +20,5 @@ async fn read(path: web::Path<String>, pool: web::Data<diesel::r2d2::Pool<Connec
         .get_result(&mut conn)
         .expect("Error selecting filedata.");
 
-    Ok(web::Json(res))
+    Ok(res.blob)
 }

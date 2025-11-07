@@ -18,7 +18,7 @@ pub struct FlowsQuery {
 
 #[derive(Deserialize, Debug)]
 pub struct FlowsFilters {
-    pub ts_to: String,
+    pub ts_to: Option<String>,
     pub services: Option<Vec<String>>,
     pub app_proto: Option<String>,
     pub search: Option<String>,

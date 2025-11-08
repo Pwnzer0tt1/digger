@@ -17,11 +17,11 @@
                     {#if ["gif", "jpg", "png", "svg"].includes(fileinfo.ext)}
                         <img class="img-fluid" src={URL.createObjectURL(new Blob([fileinfo.bytes]))} alt="">
                     {:else if fileinfo.ext === "mp4"}
-                        <video class="object-fit-contain" src={URL.createObjectURL(fileinfo.data)} controls></video>
+                        <video class="object-fit-contain" src={URL.createObjectURL(new Blob([fileinfo.bytes], { type: "video/mp4" }))} controls></video>
                     {:else if fileinfo.ext === "wav"}
-                        <audio src={URL.createObjectURL(fileinfo.data)} controls></audio>
+                        <audio src={URL.createObjectURL(new Blob([fileinfo.bytes], { type: "audio/wav" }))} controls></audio>
                     {:else if fileinfo.ext === "pdf"}
-                        <iframe title="App data viewer" src={URL.createObjectURL(fileinfo.data)} frameborder="0"></iframe>
+                        <iframe title="App data viewer" src={URL.createObjectURL(new Blob([fileinfo.bytes], { type: "application/pdf" }))} frameborder="0"></iframe>
                     {:else if fileinfo.ext === "html"}
                         <iframe class="bg-light w-100" style="height: 40vh;" title="HTML renderer" src={URL.createObjectURL(new Blob([fileinfo.bytes], { type: "text/html" }))} frameborder="0"></iframe>
                     {:else}

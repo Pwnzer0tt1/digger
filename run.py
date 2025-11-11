@@ -1,7 +1,8 @@
+#!/usr/bin/env python3
+
 # Copyright (C) 2025 Pwnzer0tt1
 # Licensed under GPL-3.0
 
-#!/usr/bin/env python3
 import argparse
 import os
 import re
@@ -136,61 +137,8 @@ def prompt_for_mode():
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-def get_tz():
-    """Get the current timezone in 00:00 format"""
-    now = datetime.now()
-    offset = now.astimezone().utcoffset()
-    if offset is None:
-        return "+00:00"
-    
-    total_seconds = offset.total_seconds()
-    hours, remainder = divmod(abs(total_seconds), 3600)
-    minutes = remainder // 60
-    sign = "-" if total_seconds < 0 else "+"
-    tz = f"{sign}{int(hours):02d}:{int(minutes):02d}"
-    return tz
-
-
-def validate_date_format(date_str):
-    """Validate the date string format (YYYY-MM-DDThh:mm) without timezone validation"""
-    # Check basic format first (date + time)
-    try:
-        basic_pattern = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}"
-        if not re.match(basic_pattern, date_str):
-            return False
-
-        datetime.fromisoformat(date_str[:16])
-        return True
-    except ValueError:
-        return False
-
-
-def validate_timezone(date_str):
-    """Validate the timezone string in format +/-HH:MM"""
-    has_tz = "+" in date_str or "-" in date_str[16:]
-    if not has_tz:
-        return None
-
-    try:
-        if not re.match(r"^[+-]\d{2}:\d{2}$", date_str[16:]):
-            return False
-
-        datetime.fromisoformat(date_str)
-        return True
-    except (ValueError, IndexError):
-        return False
-
-
 def prompt_for_missing_params(args):
     """Prompt user for missing required parameters with styled interface"""
-
-    now = datetime.now()
-    example_date = f"{now.year}-{now.month:02d}-{now.day:02d}T{now.hour:02d}:"
-    if now.minute < 30:
-        example_date += "00"
-    elif now.minute >= 30:
-        example_date += "30"
-    example_date += get_tz()
 
     print_separator(char="═")
     print(f"{Colors.BOLD}{Colors.CYAN}Configuration Setup for Mode C{Colors.END}".center(OFFSET_PRINT + 12))
@@ -215,159 +163,51 @@ def prompt_for_missing_params(args):
             else:
                 print_error("Target IP cannot be empty. Please try again.")
 
-    # Start date with validation
-    if not args.start_date:
-        print()
-        print_info("CTF Start Date Configuration")
-        print_info(f"Format: {Colors.YELLOW}YYYY-MM-DDThh:mm+ZZ:zz {Colors.BLUE}(e.g., {example_date}){Colors.END}")
-
+    # Capture device name
+    if not args.device:
+        print_info("Target capture device name")
         while True:
-            start_date = prompt_styled("Enter CTF start date")
-            if start_date and validate_date_format(start_date):
-                args.start_date = start_date
-                break
-            elif start_date:
-                print_error("Invalid date format. Please use: YYYY-MM-DDThh:mm+ZZ:zz")
-            else:
-                print_error("Start date cannot be empty. Please try again.")
-    else:
-        # Check if added date is correct
-        if not validate_date_format(args.start_date):
-            print_error(f"Invalid date format: {args.start_date}")
-            print_info(f"Format: {Colors.YELLOW}YYYY-MM-DDThh:mm {Colors.BLUE}(e.g., {example_date}){Colors.END}")
+            device = prompt_styled("Enter capture device name", default="game")
+            args.device = device
+            break
 
+    # SSH username
+    if not args.user:
+        print_info("SSH username")
+        while True:
+            user = prompt_styled("Enter SSH username", default="root")
+            args.user = user
+            break
+
+    # SSH auth method
+    if not args.key and not args.password:
+        auth_mode = "key"
+
+        print_info("SSH auth mode")
+        supported_auth_methods = ["password", "key"]
+        print_info(f"Available methods: {Colors.YELLOW}{', '.join(supported_auth_methods)}{Colors.END}")
+        while True:
+            auth_mode = prompt_styled("Enter auth method for SSH", default="key")
+            if auth_mode.lower() in [m.lower() for m in supported_auth_methods]:
+                auth_mode = auth_mode.lower()
+                break
+            print_error(f"Unsupported auth method. Choose from: {', '.join(supported_auth_methods)}")
+
+        if auth_mode == "key":
+            # SSH key path with validation
+            print_info("SSH Key Algorithm Configuration")
             while True:
-                start_date = prompt_styled("Enter CTF start date")
-                if start_date and validate_date_format(start_date):
-                    args.start_date = start_date
+                key = prompt_styled("Enter SSH key path (e.g. ~/.ssh/id_ed25519)")
+                if os.path.isfile(key):
+                    args.key = key
                     break
-                elif start_date:
-                    print_error("Invalid date format. Please use: YYYY-MM-DDThh:mm+ZZ:zz")
-                else:
-                    print_error("Start date cannot be empty. Please try again.")
-        else:
-            start_date = args.start_date
-
-    # Request for timezone, if not specified
-    if not validate_timezone(start_date):
-        print()
-        print_warning("Timezone not inserted or wrong.")
-        print()
-        print_info("Timezone Configuration")
-        current_tz = get_tz()
-        print_info(f"Format: {Colors.YELLOW}+/-HH:MM {Colors.END}")
-
-        while True:
-            tz = prompt_styled("Enter timezone", current=current_tz)
-            if validate_timezone(args.start_date + tz):
-                args.start_date = f"{args.start_date}{tz}"
+                print_error("Can't find the file. Make sure to enter a valid path.")
+        elif auth_mode == "password":
+            print_info("SSH password")
+            while True:
+                password = prompt_styled("Enter SSH password")
+                args.password = password
                 break
-            print_error(f"Invalid timezone format. Please use +/-HH:MM")
-
-    # Tick length with validation
-    if not args.tick_length:
-        print()
-        print_info("Tick Length Configuration")
-        while True:
-            tick_length = prompt_styled("Enter tick length (in seconds)", default="120")
-            if tick_length and tick_length.isdigit():
-                args.tick_length = tick_length
-                break
-            print_error("Tick length must be a positive number. Please try again.")
-
-    # Refresh rate with validation
-    if not args.refresh_rate:
-        print()
-        print_info("Refresh Rate Configuration")
-        while True:
-            refresh_rate = prompt_styled("Enter refresh rate (in seconds)", default="5")
-            if refresh_rate and refresh_rate.isdigit():
-                args.refresh_rate = refresh_rate
-                break
-            print_error("Refresh rate must be a positive number. Please try again.")
-
-    # SSH key algorithm with validation
-    if not args.key:
-        print()
-        print_info("SSH Key Algorithm Configuration")
-        supported_algorithms = ["rsa", "ed25519", "ecdsa", "dsa"]
-        print_info(f"Available algorithms: {Colors.YELLOW}{', '.join(supported_algorithms)}{Colors.END}")
-        while True:
-            key = prompt_styled("Enter SSH key algorithm", default="ed25519")
-            if key.lower() in [alg.lower() for alg in supported_algorithms]:
-                args.key = key.lower()
-                break
-            print_error(f"Unsupported algorithm. Choose from: {', '.join(supported_algorithms)}")
-
-
-def write_env(start_date, target_ip, tick_length, refresh_rate):
-    if not os.path.exists(ENV_FILE):
-        print_warning(f"{ENV_FILE} file not found. Creating new file.")
-        with open(ENV_FILE, "w") as f:
-            f.write("")
-    else:
-        print_info(f"Updating {ENV_FILE} file.")
-
-    with open(ENV_FILE, "w") as f:
-        content = ""
-
-        # Everything has been already validated
-        content += f"CTF_START_DATE={start_date}\n"
-        content += f"CTF_TICK_LENGTH={tick_length}\n"
-        content += f"TARGET_IP={target_ip}\n"
-        content += f"REFRESH_RATE={refresh_rate}\n"
-
-        f.write(content)
-
-    print_success(f"Environment variables written to {ENV_FILE}")
-    print(f"  {Colors.CYAN}CTF_START_DATE{Colors.END} = {start_date}")
-    print(f"  {Colors.CYAN}TARGET_IP{Colors.END} = {target_ip}")
-    print(f"  {Colors.CYAN}CTF_TICK_LENGTH{Colors.END} = {tick_length}")
-    print(f"  {Colors.CYAN}REFRESH_RATE{Colors.END} = {refresh_rate}")
-    print()
-
-
-def update_compose(target_ip, key):
-    """Update target IP and SSH key in docker-compose-c.yml"""
-    compose_file = "docker-compose-c.yml"
-
-    supported_algorithms = ["rsa", "ed25519", "ecdsa", "dsa"]
-    if key.lower() not in [alg.lower() for alg in supported_algorithms]:
-        print_error(f"Unsupported SSH key algorithm: {key}")
-        print(f"    Supported algorithms are: {', '.join(supported_algorithms)}")
-        sys.exit(1)
-
-    if not os.path.exists(compose_file):
-        print_warning(f"{compose_file} file not found. Cannot update target IP.")
-        return
-
-    with open(compose_file, "r") as f:
-        content = f.read()
-
-    # Replace the Target IP
-    ip_pattern = r"ssh root@[\d\.:]+ -oStrictHostKeyChecking=no"
-    ip_replacement = f"ssh root@{target_ip} -oStrictHostKeyChecking=no"
-
-    if re.search(ip_pattern, content):
-        modified_content = re.sub(ip_pattern, ip_replacement, content)
-        print_success(f"Updated SSH target IP to {target_ip} in {compose_file}")
-    else:
-        print_error(f"Could not find SSH command pattern in {compose_file}")
-        sys.exit(1)
-
-    # Replace the SSH key path
-    key_pattern = r"~/.ssh/id_[a-zA-Z0-9_]+:/root/.ssh/id_[a-zA-Z0-9_]+:ro"
-    key_replacement = f"~/.ssh/id_{key}:/root/.ssh/id_{key}:ro"
-
-    if re.search(key_pattern, modified_content):
-        modified_content = re.sub(key_pattern, key_replacement, modified_content)
-        print_success(f"Updated SSH key path to use algorithm: {key}")
-    else:
-        print_error(f"Could not find SSH key pattern in {compose_file}")
-        sys.exit(1)
-
-    with open(compose_file, "w") as f:
-        f.write(modified_content)
 
 
 def compose_down(compose_file):
@@ -448,50 +288,6 @@ def clear_suricata():
         print()
 
 
-
-def clear_config():
-    """Clear configuration files"""
-    
-    files_to_clear = [ENV_FILE, "services_config.json"]
-    cleared_files = []
-
-    for file_path in files_to_clear:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            cleared_files.append(file_path)
-
-    if cleared_files:
-        print_success(f"Cleared config files: {', '.join(cleared_files)}")
-        print()
-    else:
-        print_info("No config files found to clear.")
-        print()
-
-
-def clear_pcap():
-    """Clear PCAP files"""
-    pcap_dir = "./tshark/dumps/"
-    if not os.path.exists(pcap_dir):
-        print_warning("PCAP directory not found. Skipping clear operation.")
-        os.makedirs(pcap_dir, exist_ok=True)
-        return
-
-    if not os.listdir(pcap_dir):
-        print_info("PCAP directory already empty. Skipping clear operation.")
-        return
-
-    cmd = f"sudo rm -rf {pcap_dir}/*"
-    print_progress("Cleaning PCAP files...")
-
-    try:
-        subprocess.run(cmd, check=True, shell=True)
-        print_success("PCAP files cleaned successfully!")
-        print()
-    except subprocess.CalledProcessError as e:
-        print_error(f"Failed to clean PCAP files: {e}")
-        print()
-
-
 def get_compose_file_for_mode(mode):
     """Get the appropriate compose file for the given mode"""
     return COMPOSE_FILES.get(mode.upper(), COMPOSE_FILES["C"])
@@ -520,8 +316,6 @@ def handle_start_command(args):
     if args.no_clean:
         print_info("Skipping environment cleaning due to --no-clean flag...")
         print_warning("Suricata output directory will not be cleared.")
-        print_warning("Config files will not be cleared.")
-        print_warning("PCAP files will not be cleared.")
         print()
     elif not args.no_build:
         
@@ -541,48 +335,6 @@ def handle_start_command(args):
                 break
             elif r in ["n", "no", ""]:
                 print_warning("Suricata output directory will not be cleared.")
-                print()
-                break
-            else:
-                print_error("Invalid input. Please enter 'y' or 'n'.")
-        
-        # Clear config files
-        while True:
-            r = (
-                prompt_styled(
-                    "Do you want to clear config files? (y/n)",
-                    required=False,
-                    default="n",
-                )
-                .strip()
-                .lower()
-            )
-            if r in ["y", "yes"]:
-                clear_config()
-                break
-            elif r in ["n", "no", ""]:
-                print_warning("Config files will not be cleared.")
-                print()
-                break
-            else:
-                print_error("Invalid input. Please enter 'y' or 'n'.")
-        
-        # Clear PCAP files
-        while True:
-            r = (
-                prompt_styled(
-                    "Do you want to clear pcap files? (y/n)",
-                    required=False,
-                    default="n",
-                )
-                .strip()
-                .lower()
-            )
-            if r in ["y", "yes"]:
-                clear_pcap()
-                break
-            elif r in ["n", "no", ""]:
-                print_warning("PCAP files will not be cleared.")
                 print()
                 break
             else:
@@ -609,27 +361,9 @@ def handle_start_command(args):
 
         prompt_for_missing_params(args)
 
-        # Validate start date format after prompting
-        if args.start_date and not validate_date_format(args.start_date):
-            print_error(f"Invalid start date format: {args.start_date}")
-            print("This should not happen as validation is done during prompting.")
-            sys.exit(1)
-
-        # If target IP and date are specified, update '.env' and 'docker-compose-c.yml'
-        write_env(
-            start_date=args.start_date,
-            target_ip=args.target_ip,
-            tick_length=args.tick_length,
-            refresh_rate=args.refresh_rate,
-        )
-        update_compose(target_ip=args.target_ip, key=args.key)
-
-        # Create a new file 'services_config.json' empty
-        json_config = "services_config.json"
-        if not os.path.exists(json_config):
-            print_info(f"Creating empty {json_config} file.")
-            with open(json_config, "w") as f:
-                f.write("{}")
+        with open(".env", "w") as env_file:
+            env_file.write(f"PCAP_COMMAND=\"ssh {args.user}@{args.target_ip} -oStrictHostKeyChecking=no\ntcpdump -U --immediate-mode -ni {args.device} -s 65535 -w - not tcp port 22\"")
+            
 
     print_separator(char="═")
     print_success("Configuration completed successfully!")
@@ -649,13 +383,7 @@ def handle_stop_command():
     """Handle the stop command"""
     print_progress("Stopping Digger...")
 
-    # Check if .env exists to determine which compose file to use
-    if os.path.exists(ENV_FILE):
-        compose_file = COMPOSE_FILES["C"]  # Default to C
-        print_info("Stopping containers using default compose file...")
-    else:
-        print_warning("No configuration file found. Attempting to stop default containers...")
-        compose_file = COMPOSE_FILES["C"]
+    compose_file = COMPOSE_FILES["C"]
 
     # Check if compose file exists
     if not os.path.exists(compose_file):
@@ -672,7 +400,7 @@ def handle_clear_command(args):
     print_progress("Clearing data...")
 
     # If no specific options, default to clearing output and stopping containers
-    if not (args.all or args.config or args.suricata or args.pcap):
+    if not (args.all or args.suricata):
         print_info("No specific clear option provided.\n")
 
         # Stop containers first
@@ -700,47 +428,6 @@ def handle_clear_command(args):
             else:
                 print_error("Invalid input. Please enter 'y' or 'n'.")
 
-        # Clear config files
-        while True:
-            r = (
-                prompt_styled(
-                    "Do you want to clear config files? (y/n)",
-                    required=False,
-                    default="n",
-                )
-                .strip()
-                .lower()
-            )
-            if r in ["y", "yes"]:
-                clear_config()
-                break
-            elif r in ["n", "no", ""]:
-                print_warning("Config files will not be cleared.")
-                print()
-                break
-            else:
-                print_error("Invalid input. Please enter 'y' or 'n'.")
-
-        # Clear PCAP files
-        while True:
-            r = (
-                prompt_styled(
-                    "Do you want to clear pcap files? (y/n)",
-                    required=False,
-                    default="n",
-                )
-                .strip()
-                .lower()
-            )
-            if r in ["y", "yes"]:
-                clear_pcap()
-                break
-            elif r in ["n", "no", ""]:
-                print_warning("PCAP files will not be cleared.")
-                print()
-                break
-            else:
-                print_error("Invalid input. Please enter 'y' or 'n'.")
         return
 
     # Handle --all option
@@ -754,21 +441,11 @@ def handle_clear_command(args):
         # Clear Suricata output
         clear_suricata()
 
-        # Clear config files
-        clear_config()
-
-        # Clear PCAP files
-        clear_pcap()
-
         print_success("All data cleared successfully!")
         return
 
     # Handle granular options
     cleared_items = []
-
-    if args.config:
-        clear_config()
-        cleared_items.append("config files")
 
     if args.suricata:
         # Stop containers first if clearing output - check if compose file exists
@@ -777,11 +454,6 @@ def handle_clear_command(args):
 
         clear_suricata()
         cleared_items.append("Suricata output")
-
-    if args.pcap:
-        # Clear PCAP files - check if directory exists
-        clear_pcap()
-        cleared_items.append("PCAP files")
 
     if cleared_items:
         print_success(f"Cleared: {', '.join(cleared_items)}")
@@ -792,10 +464,6 @@ def handle_clear_command(args):
 def handle_status_command():
     """Handle the status command - show container status"""
     print_progress("Checking Digger status...")
-
-    # Check if .env exists to provide context
-    if not os.path.exists(ENV_FILE):
-        print_warning("No configuration file found. Showing default container status...")
 
     # Default to mode C compose file
     compose_file = COMPOSE_FILES["C"]
@@ -870,9 +538,7 @@ def create_parser():
   {Colors.CYAN}./start.py stop{Colors.END}                                   # Stop running containers
   {Colors.CYAN}./start.py clear{Colors.END}                                  # Clear output and stop containers
   {Colors.CYAN}./start.py clear --all{Colors.END}                            # Clear everything
-  {Colors.CYAN}./start.py clear --config{Colors.END}                         # Clear only config files
   {Colors.CYAN}./start.py clear --suricata{Colors.END}                       # Clear only Suricata output
-  {Colors.CYAN}./start.py clear --pcap{Colors.END}                           # Clear only PCAP files
   {Colors.CYAN}./start.py status{Colors.END}                                 # Show container status
   {Colors.CYAN}./start.py logs{Colors.END}                                   # Follow all container logs
   {Colors.CYAN}./start.py logs --tail 100{Colors.END}                        # Last 100 logs of all containers
@@ -906,33 +572,34 @@ def create_parser():
         "--no-clean", action="store_true", help="Skip cleaning environment"
     )
     parser_start.add_argument(
-        "--date",
-        dest="start_date",
-        help="Specify CTF start date (format: YYYY-MM-DDThh:mm+ZZ:zz)",
-    )
-    parser_start.add_argument(
         "--target-ip",
         "-ip",
         dest="target_ip",
         help="Specify target machine IP address (for mode C)",
     )
     parser_start.add_argument(
-        "--refresh-rate",
-        "-r",
-        dest="refresh_rate",
-        help="Specify refresh rate (in seconds)",
-    )
-    parser_start.add_argument(
-        "--tick-length",
-        "-t",
-        dest="tick_length",
-        help="Specify tick length (in seconds)",
+        "--device",
+        "-d",
+        dest="device",
+        help="Name of the device used to capture traffic on the remote machine (default: game)"
     )
     parser_start.add_argument(
         "--key",
         "-k",
         dest="key",
-        help="Specify algorithm for SSH key exchange (default: ed25519)",
+        help="Specify SSH private key file (e.g. ~/.ssh/id_ed25519)",
+    )
+    parser_start.add_argument(
+        "--user",
+        "-u",
+        dest="user",
+        help="Specify username for SSH login (default: root)"
+    )
+    parser_start.add_argument(
+        "--password",
+        "-pwd",
+        dest="password",
+        help="Specify password for SSH login"
     )
 
     # Stop command
@@ -949,22 +616,10 @@ def create_parser():
         help="Clear everything (containers, output, config)",
     )
     parser_clear.add_argument(
-        "--config",
-        "-c",
-        action="store_true",
-        help="Clear config files (.env and services_config.json)",
-    )
-    parser_clear.add_argument(
         "--suricata",
         "-s",
         action="store_true",
         help="Clean Suricata output and stop containers",
-    )
-    parser_clear.add_argument(
-        "--pcap",
-        "-p",
-        action="store_true",
-        help="Clear PCAP files captured with Tshark",
     )
 
     # Status command - simple container status

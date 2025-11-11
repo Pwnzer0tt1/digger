@@ -1,5 +1,11 @@
 # Copyright (C) 2024  ANSSI
 # SPDX-License-Identifier: CC0-1.0
+
+# Modifications
+# Copyright (C) 2025 Pwnzer0tt1
+# This file has been modified from the original version.
+# Licensed under GPL-3.0
+
 name: digger
 
 services:
@@ -13,15 +19,8 @@ services:
     # Mode A: pcap replay mode (slower, for archives replay or rootless CTF)
     # Add `--pcap-file-continuous` to watch for new pcap in folder.
     command: -r /input_pcaps --pcap-file-continuous
-
-  #frontend:
-  #  build: ./frontend
-  #  restart: always
-  #  volumes:
-  #    - "./input_pcaps:/input_pcaps:ro" # remove to prevent users from downloading pcaps
-  #    - "./suricata/output:/suricata/output:ro"
-  #  ports:
-  #    - 0.0.0.0:8000:8000
+    depends_on:
+      - postgres
 
   webapp:
     build: ./webapp
@@ -31,6 +30,8 @@ services:
       - "./suricata/output:/suricata/output:ro"
     ports:
       - 0.0.0.0:8000:8000
+    depends_on:
+      - postgres
 
   postgres:
     image: postgres:alpine

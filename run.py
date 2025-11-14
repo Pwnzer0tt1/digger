@@ -179,35 +179,15 @@ def prompt_for_missing_params(args):
             args.user = user
             break
 
-    # SSH auth method
-    if not args.key and not args.password:
-        auth_mode = "key"
-
-        print_info("SSH auth mode")
-        supported_auth_methods = ["password", "key"]
-        print_info(f"Available methods: {Colors.YELLOW}{', '.join(supported_auth_methods)}{Colors.END}")
-        while True:
-            auth_mode = prompt_styled("Enter auth method for SSH", default="key")
-            if auth_mode.lower() in [m.lower() for m in supported_auth_methods]:
-                auth_mode = auth_mode.lower()
-                break
-            print_error(f"Unsupported auth method. Choose from: {', '.join(supported_auth_methods)}")
-
-        if auth_mode == "key":
-            # SSH key path with validation
-            print_info("SSH Key Algorithm Configuration")
-            while True:
-                key = prompt_styled("Enter SSH key path (e.g. ~/.ssh/id_ed25519)")
-                if os.path.isfile(key):
-                    args.key = key
-                    break
-                print_error("Can't find the file. Make sure to enter a valid path.")
-        elif auth_mode == "password":
-            print_info("SSH password")
-            while True:
-                password = prompt_styled("Enter SSH password")
-                args.password = password
-                break
+    # SSH key path with validation
+    print_info("SSH Key Algorithm Configuration")
+    while True:
+        key = prompt_styled("Enter SSH key path (e.g. ~/.ssh/id_ed25519)")
+        key = key.replace("~", os.environ["HOME"])
+        if os.path.isfile(key):
+            args.key = key
+            break
+        print_error("Can't find the file. Make sure to enter a valid path.")
 
 
 def compose_down(compose_file):
@@ -362,7 +342,8 @@ def handle_start_command(args):
         prompt_for_missing_params(args)
 
         with open(".env", "w") as env_file:
-            env_file.write(f"PCAP_COMMAND=\"ssh {args.user}@{args.target_ip} -oStrictHostKeyChecking=no\ntcpdump -U --immediate-mode -ni {args.device} -s 65535 -w - not tcp port 22\"")
+            env_file.write(f"KEY=\"{args.key}\"\n")
+            env_file.write(f"PCAP_COMMAND=\"ssh {args.user}@{args.target_ip} -i /root/.ssh/identity -oStrictHostKeyChecking=no\nsudo  tcpdump -U --immediate-mode -ni {args.device} -s 65535 -w - not tcp port 22\"")
             
 
     print_separator(char="═")
@@ -594,12 +575,6 @@ def create_parser():
         "-u",
         dest="user",
         help="Specify username for SSH login (default: root)"
-    )
-    parser_start.add_argument(
-        "--password",
-        "-pwd",
-        dest="password",
-        help="Specify password for SSH login"
     )
 
     # Stop command

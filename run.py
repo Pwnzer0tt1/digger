@@ -9,7 +9,7 @@ import re
 import shutil
 import subprocess
 import sys
-from datetime import datetime
+import ipaddress
 
 ENV_FILE = ".env"
 COMPOSE_FILES = {
@@ -149,19 +149,11 @@ def prompt_for_missing_params(args):
         print_info("Target IP Configuration")
         while True:
             target_ip = prompt_styled("Enter target IP address")
-            if target_ip:
-                if re.match(r"^(\d{1,3}\.){3}\d{1,3}$", target_ip):
-                    octets = target_ip.split(".")
-                    valid_octets = all(0 <= int(octet) <= 255 for octet in octets)
-                    if valid_octets:
-                        args.target_ip = target_ip
-                        break
-                    else:
-                        print_error("IP address octets must be between 0-255. Please try again.")
-                else:
-                    print_error("Invalid IP address format. Please use format: xxx.xxx.xxx.xxx")
-            else:
-                print_error("Target IP cannot be empty. Please try again.")
+            try:
+                ipaddress.ip_address(target_ip)
+                args.target_ip = target_ip
+            except ValueError:
+                print_error("Target IP must be a valid IPv4 or IPv6 address.")
 
     # Capture device name
     if not args.device:

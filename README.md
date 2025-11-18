@@ -152,10 +152,9 @@ for archiving purposes.
 ### Mode C - Live capture using PCAP-over-IP (fast)
 
 This mode requires to have access to a TCP listener exposing PCAP-over-IP.
-Such server can be easily spawned using:
-
+By the default pcap-broker will connect with SSH to the vulnbox and run the command:
 ```bash
-tcpdump -U --immediate-mode -ni game -s 65535 -w - not tcp port 22 | nc -l 57012
+tcpdump -U --immediate-mode -ni game -s 65535 -w - not tcp port 22
 ```
 
 If you need to route PCAP-over-IP to multiple clients, you should consider using
@@ -195,14 +194,14 @@ To start Digger, use the `start` command with one of the following capture modes
 When using **Mode C**, you can specify additional parameters:
 
 - **`--target-ip TARGET_IP`** (or `-ip`): IP address of the vulnbox (MANDATORY for Mode C)
-- **`--key ALGORITHM`** (or `-k`): SSH key algorithm for connection (default: ed25519)
+- **`--key ALGORITHM`** (or `-k`): SSH private key path used for connection
 
 Here you can find an example with the full configuration:
 
 ```bash
 ./run.py start --mode-c \
   --target-ip 10.60.0.1 \
-  --key ed25519
+  --key ~/.ssh/id_ed25519
 ```
 
 #### Build and Clean Options

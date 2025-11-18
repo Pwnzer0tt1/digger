@@ -5,7 +5,6 @@
 
 import argparse
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -139,7 +138,6 @@ def prompt_for_mode():
 
 def prompt_for_missing_params(args):
     """Prompt user for missing required parameters with styled interface"""
-
     print_separator(char="═")
     print(f"{Colors.BOLD}{Colors.CYAN}Configuration Setup for Mode C{Colors.END}".center(OFFSET_PRINT + 12))
     print_separator()
@@ -290,18 +288,9 @@ def handle_start_command(args):
         print_warning("Suricata output directory will not be cleared.")
         print()
     elif not args.no_build:
-        
         # Clear Suricata output
         while True:
-            r = (
-                prompt_styled(
-                    "Do you want to clear Suricata output directory? (y/n)",
-                    required=False,
-                    default="n",
-                )
-                .strip()
-                .lower()
-            )
+            r = (prompt_styled("Do you want to clear Suricata output directory? (y/n)", required=False, default="n").strip().lower())
             if r in ["y", "yes"]:
                 clear_suricata()
                 break
@@ -373,7 +362,7 @@ def handle_clear_command(args):
     print_progress("Clearing data...")
 
     # If no specific options, default to clearing output and stopping containers
-    if not (args.all or args.suricata):
+    if not (args.all or args.suricata or args.rules):
         print_info("No specific clear option provided.\n")
 
         # Stop containers first
@@ -382,15 +371,7 @@ def handle_clear_command(args):
 
         # Clear Suricata output
         while True:
-            r = (
-                prompt_styled(
-                    "Do you want to clear Suricata output directory? (y/n)",
-                    required=False,
-                    default="n",
-                )
-                .strip()
-                .lower()
-            )
+            r = (prompt_styled("Do you want to clear Suricata output directory? (y/n)", required=False, default="n").strip().lower())
             if r in ["y", "yes"]:
                 clear_suricata()
                 break

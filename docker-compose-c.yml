@@ -1,5 +1,11 @@
 # Copyright (C) 2024  ANSSI
 # SPDX-License-Identifier: CC0-1.0
+
+# Modifications
+# Copyright (C) 2025 Pwnzer0tt1
+# This file has been modified from the original version.
+# Licensed under GPL-3.0
+
 name: digger
 
 services:
@@ -16,49 +22,29 @@ services:
     restart: always
     depends_on:
       - pcap-broker
+      - postgres
     environment:
       - PCAP_OVER_IP=pcap-broker:4242
 
-  frontend:
-    build: ./frontend
+  webapp:
+    build: ./webapp
     restart: always
     volumes:
       - "./input_pcaps:/input_pcaps:ro" # remove to prevent users from downloading pcaps
-      - "./suricata/output:/suricata/output:rw"
-      - "./services_config.json:/webapp/services_config.json:rw"
+      - "./suricata/output:/suricata/output:ro"
     ports:
       - 0.0.0.0:8000:8000
+    depends_on:
+      - postgres
 
   pcap-broker:
-    container_name: pcap-broker-op
-    build:
-      context: .
-      dockerfile_inline: |
-        FROM golang:alpine
-        RUN apk add --no-cache build-base libpcap-dev openssh-client tcpdump
-        RUN go install github.com/fox-it/pcap-broker@latest
-        ENTRYPOINT ["pcap-broker"]
+    build: ./pcap_broker
     restart: always
     volumes:
-      - "~/.ssh/id_ed25519:/root/.ssh/id_ed25519:ro"
+      - "${KEY}:/root/.ssh/identity:ro"
     environment:
-      PCAP_COMMAND: |-
-        ssh root@10.60.1.1 -oStrictHostKeyChecking=no
-        tcpdump -U --immediate-mode -ni game -s 65535 -w - not tcp port 22
+      PCAP_COMMAND: ${PCAP_COMMAND}
       LISTEN_ADDRESS: 0.0.0.0:4242
-
-  tshark:
-    build:
-      context: ./tshark
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    environment:
-      - PCAP_TCP_DOMAIN=pcap-broker
-      - PCAP_TCP_PORT=4242
-      - PCAP_FILE_NAME=dump
-    volumes:
-      - ./tshark/dumps:/dump-pcap
-    entrypoint: docker-entrypoint.sh
 
   postgres:
     image: postgres:alpine

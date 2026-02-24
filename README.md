@@ -36,7 +36,7 @@ Compared to these traffic analyser tools, excluding Shovel, Digger only relies o
 making opinionated choices for the frontend. This has a few nice implications:
 
 - dissection of all application protocols supported by Suricata (HTTP2, modbus, SMB, DNS, etc),
-- flows payloads and dissections are stored inside PostgreSQL database for fast queries,
+- flows payloads and dissections are stored inside a PostgreSQL database for fast queries,
 - ingest can be a folder of pcaps for non-root CTF, or a live capture (less delay),
 - tags are defined using Suricata rules (regex, libmagic match, HTTP header, etc),
 - no heavy build tools needed, Digger is easy to tweak.
@@ -69,19 +69,19 @@ or pcap    │  Suricata with:               │       │                    �
 
 ## Differences with Shovel
 
-- The frontend is made with SvelteKit
+- The webapp is made with Svelte and Actix Web
 - The UI has a fresh style with some new features: hexdump viewer, code highlighting, stats page
 - CTF related settings (e.g. tick length, datetime start) are stored using a JSON file that can be edited from the webapp.
-- A `start.py` that automatically starts Digger
+- A `run.py` that automatically starts Digger
 - A single PostgreSQL container is used in place of two separated SQLite files
-- Digger is distributed with a GPL-3.0 license.
+- Digger is distributed with a GPL-3.0 license
 
 ### Commonalities with Shovel
 Most of the original code of Shovel has been completly changed.
 
-The webapp now inside the folder [frontend](/frontend/) shares some similiarities but none of the original files remained, everything is new.
+The webapp shares some similiarities but none of the original files remained, everything is new.
 
-The part related to Suricata is what remain in common with Shovel, except for the use of PostgreSQL as database and Diesel ORM as SQL driver. Some minor changes were also made like: we use `crossbeam` instead of `mspc`, remove `regex_lite` and use `serde_json`.
+The part related to Suricata is what remain in common with Shovel, except for the use of PostgreSQL as database and Diesel ORM and some minor changes.
 
 An important part that remained the same is the template used for registering the plugins. Thanks to [FCSC-FR](https://github.com/FCSC-FR), in particular [erdnaxe](https://github.com/erdnaxe), we figured how to use Suricata 8.0.0 in Digger without breaking stuff.
 
@@ -126,25 +126,9 @@ Suricata command line.
 
 A sample configuration can be found in `docker-compose-a.yml`.
 
-If you don't want to use Docker, you may manually launch Suricata and the web
-application using the two following commands:
-
-```bash
-./suricata/entrypoint.sh -r input_pcaps
-(cd webapp && uvicorn --host 127.0.0.1 main:app)
-```
-
 > [!WARNING]
 > Please note that restarting Suricata will cause all network capture files to
 > be loaded again. It might add some delay before observing new flows.
-
-> [!TIP]
-> For a Microsoft Windows system, you may capture network traffic using the
-> following command (3389 is RDP) inside a PowerShell console:
->
-> ```powershell
-> &'C:\Program Files\Wireshark\tshark.exe' -i game -w Z:\ -f "tcp port not 3389" -b duration:60
-> ```
 
 ---
 
@@ -157,14 +141,6 @@ Here this device is named `tun5`.
 
 A sample configuration can be found in `docker-compose-b.yml`.
 
-If you don't want to use Docker, you may manually launch Suricata and the web
-application using the two following commands:
-
-```bash
-sudo ./suricata/entrypoint.sh -i tun5
-(cd webapp && uvicorn --host 127.0.0.1 main:app)
-```
-
 > [!WARNING]
 > Please note that stopping Suricata will stop network capture.
 
@@ -176,23 +152,14 @@ for archiving purposes.
 ### Mode C - Live capture using PCAP-over-IP (fast)
 
 This mode requires to have access to a TCP listener exposing PCAP-over-IP.
-Such server can be easily spawned using:
-
+By the default pcap-broker will connect with SSH to the vulnbox and run the command:
 ```bash
-tcpdump -U --immediate-mode -ni game -s 65535 -w - not tcp port 22 | nc -l 57012
+tcpdump -U --immediate-mode -ni game -s 65535 -w - not tcp port 22
 ```
 
 If you need to route PCAP-over-IP to multiple clients, you should consider using
 [pcap-broker](https://github.com/fox-it/pcap-broker).
 A sample configuration is given in `docker-compose-c.yml`.
-
-If you don't want to use Docker, you may manually launch Suricata and the web
-application using the two following commands:
-
-```bash
-PCAP_OVER_IP=pcap-broker:4242 ./suricata/entrypoint.sh -r /dev/stdin
-(cd webapp && uvicorn --host 127.0.0.1 main:app)
-```
 
 > [!WARNING]
 > Please note that stopping Suricata will stop network capture.
@@ -201,11 +168,11 @@ PCAP_OVER_IP=pcap-broker:4242 ./suricata/entrypoint.sh -r /dev/stdin
 
 ### Starting Digger
 
-Digger provides a convenient `./start.py` script to manage containers and configuration. The script supports multiple commands with a user-friendly interface.
+Digger provides a convenient `./run.py` script to manage containers and configuration. The script supports multiple commands with a user-friendly interface.
 
-If you run `./start.py` without arguments, it will enter interactive mode where you can select actions and configure parameters through guided prompts.
+If you run `./run.py` without arguments, it will enter interactive mode where you can select actions and configure parameters through guided prompts.
 
-Here you can find a list of available commands to use with `./start.py`:
+Here you can find a list of available commands to use with `./run.py`:
 
 - **`start`** - Build and start containers
 - **`stop`** - Stop running containers
@@ -227,20 +194,14 @@ To start Digger, use the `start` command with one of the following capture modes
 When using **Mode C**, you can specify additional parameters:
 
 - **`--target-ip TARGET_IP`** (or `-ip`): IP address of the vulnbox (MANDATORY for Mode C)
-- **`--date START_DATE`**: CTF start date in ISO format `YYYY-MM-DDThh:mm+ZZ:zz`
-- **`--tick-length LENGTH`** (or `-t`): Tick length in seconds (default: 120)
-- **`--refresh-rate RATE`** (or `-r`): Auto-refresh rate in seconds (default: 30)
-- **`--key ALGORITHM`** (or `-k`): SSH key algorithm for connection (default: ed25519)
+- **`--key ALGORITHM`** (or `-k`): SSH private key path used for connection
 
 Here you can find an example with the full configuration:
 
 ```bash
-./start.py start --mode-c \
+./run.py start --mode-c \
   --target-ip 10.60.0.1 \
-  --date "1970-01-01T10:00+02:00" \
-  --tick-length 120 \
-  --refresh-rate 30 \
-  --key ed25519
+  --key ~/.ssh/id_ed25519
 ```
 
 #### Build and Clean Options
@@ -253,7 +214,7 @@ Here you can find an example with the full configuration:
 To stop running containers:
 
 ```bash
-./start.py stop
+./run.py stop
 ```
 
 #### Managing Data
@@ -261,15 +222,13 @@ To stop running containers:
 The **`clear`** command provides granular control over data cleanup. You can use the interactive clear by running:
 
 ```bash
-./start.py clear
+./run.py clear
 ```
 
 Alternatively, you can specify what to clean:
 
 ```bash
-./start.py clear --config         # (or -c): Clear .env and services_config.json
-./start.py clear --suricata       # (or -s): Clear Suricata output and stop containers
-./start.py clear --pcap           # (or -p): Clear PCAP files
+./run.py clear --suricata       # (or -s): Clear Suricata output and stop containers
 ```
 
 To rapidly delete everything listed above you can use the flag `--all` (or `-A`).
@@ -281,20 +240,20 @@ To avoid the cleanup, you can add the flag `--no-clean` to the startup command.
 Check container status:
 
 ```bash
-./start.py status
+./run.py status
 ```
 
 Follow container logs:
 
 ```bash
 # Follow all container logs
-./start.py logs
+./run.py logs
 
 # Follow logs with tail limit
-./start.py logs --tail 100
+./run.py logs --tail 100
 
 # Follow specific service logs
-./start.py logs webapp --tail 50
+./run.py logs webapp --tail 50
 ```
 
 #### Quick Reference
@@ -302,30 +261,30 @@ Follow container logs:
 For a complete list of commands and options, run:
 
 ```bash
-./start.py help
+./run.py help
 ```
 
 Common command examples:
 
 ```bash
 # Quick start Mode C with target IP
-./start.py start --mode-c --target-ip 10.60.2.1
+./run.py start --mode-c --target-ip 10.60.2.1
 
 # Start without rebuilding images
-./start.py start --mode-c --no-build
+./run.py start --mode-c --no-build
 
 # Start preserving existing data
-./start.py start --mode-c --no-clean
+./run.py start --mode-c --no-clean
 
 # Stop everything
-./start.py stop
+./run.py stop
 
 # Clean everything and stop
-./start.py clear --all
+./run.py clear --all
 
 # Monitor containers
-./start.py status
-./start.py logs
+./run.py status
+./run.py logs
 ```
 
 ### Customizing services
@@ -340,8 +299,6 @@ Click on the settings icon in the top left corner to open the **Service Manager*
 
 ![ServicesManager](./.github/ServicesManager.png)
 
-> [!WARNING]
-> Note that if Digger is restarted without the `--no-clean` flag, the configuration in the web interface will be lost. Use `./start.py start --no-clean` to preserve existing configuration.
 
 ### Settings
 

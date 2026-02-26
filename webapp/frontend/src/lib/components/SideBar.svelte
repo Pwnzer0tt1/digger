@@ -1,13 +1,15 @@
 <script lang="ts">
-	import type { Tags } from "$lib/schema";
+	import type { Tag } from "$lib/schema";
 	import { ctfConfig, flows, flowsFilters, selectedPanel, tickInfo } from "$lib/state.svelte";
 	import FlowCard from "./FlowCard.svelte";
 
     let { tags, appProto }: {
-        tags: Tags,
+        tags: Tag[],
         appProto: string[]
     } = $props();
-
+    
+    let lastTick = -1;
+    
     let innerHeight = $state(0);
     let sideBarHeight = $state(0);
     let autoUpdateBtnHeight = $state(0);
@@ -113,13 +115,13 @@
         <select bind:value={selectedService} onchange={changeSelectedService} class="form-select shadow-lg">
             <option value="" selected>All flows</option>
             <option value="!">Flows from unknown services</option>
-            {#each Object.entries(ctfConfig.config.services) as [name, service]}
-                <optgroup label={name}>
-                    {#if service.ipports.length > 1}
-                        <option value={ service.ipports.map((v) => `${v.ip}:${v.port}`).join(", ") }>All ({ name })</option>
+            {#each Object.entries(ctfConfig.config.services) as service (service[0])}
+                <optgroup label={service[0]}>
+                    {#if service[1].ipports.length > 1}
+                        <option value={ service[1].ipports.map((v) => `${v.ip}:${v.port}`).join(", ") }>All ({ service[0] })</option>
                     {/if}
-                    {#each service.ipports as ipport}
-                        <option value="{ipport.ip}:{ipport.port}">{ipport.ip}:{ipport.port} ({ name })</option>
+                    {#each service[1].ipports as ipport, index (index)}
+                        <option value="{ipport.ip}:{ipport.port}">{ipport.ip}:{ipport.port} ({ service[0] })</option>
                     {/each}
                 </optgroup>
             {/each}
@@ -142,7 +144,7 @@
                     <select onchange={changeProtocol} bind:value={protocol} class="form-select">
                         <option value="">All</option>
                         <option value="failed">Failed</option>
-                        {#each appProto as proto}
+                        {#each appProto as proto, index (index)}
                             <option value={proto}>{proto.toUpperCase()}</option>
                         {/each}
                     </select>
@@ -154,7 +156,7 @@
                 <div class="card mb-2 bg-secondary-subtle">
                     <header class="card-header d-flex justify-content-between py-1 px-2 small">Available tags</header>
                     <div class="card-body p-2 d-flex align-content-start flex-wrap gap-1">
-                        {#each availableTags as t}
+                        {#each availableTags as t, index (index)}
                             {#if !flowsFilters.tags_require.includes(t) && !flowsFilters.tags_deny.includes(t)}
                                 <button onclick={selectAvailableTag} class="btn text-bg-{tagsDict[t]} badge rounded-pill" value={t}>{t}</button>
                             {/if}
@@ -164,7 +166,7 @@
                 <div class="card mb-2 bg-secondary-subtle border-success">
                     <header class="card-header d-flex justify-content-between py-1 px-2 small">Required tags</header>
                     <div class="card-body p-2 d-flex align-content-start flex-wrap gap-1">
-                        {#each flowsFilters.tags_require as t}
+                        {#each flowsFilters.tags_require as t, index (index)}
                             <button onclick={selectRequiredTag} class="btn text-bg-{tagsDict[t]} badge rounded-pill" value={t}>{t}</button>
                         {/each}
                     </div>
@@ -172,7 +174,7 @@
                 <div class="card mb-2 bg-secondary-subtle border-danger">
                     <header class="card-header d-flex justify-content-between py-1 px-2 small">Denied tags</header>
                     <div class="card-body p-2 d-flex align-content-start flex-wrap gap-1">
-                        {#each flowsFilters.tags_deny as t}
+                        {#each flowsFilters.tags_deny as t, index (index)}
                             <button onclick={selectDeniedTag} class="btn text-bg-{tagsDict[t]} badge rounded-pill" value={t}>{t}</button>
                         {/each}
                     </div>
@@ -193,8 +195,15 @@
         {:else}
             <div class="overflow-y-scroll">
                 <div class="list-group list-group-flush m-1 rounded">
-                    {#each Object.entries(flows.flows) as [index, f]}
-                        <FlowCard index={Number(index)} flow={f} tags={tags} />
+                    {#each Object.entries(flows.flows) as f, index (f[0])}
+                        {#if tickInfo.tickNumber > 0}
+                            {@const startTs = Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000)}
+                            {@const tick = Math.floor((Number(f[1].ts_start) / 1000000 - startTs) / ctfConfig.config.tick_length)}
+                            {#if tick !== lastTick}
+                                <p class="list-group-item fw-bold mb-0 text-center text-bg-secondary">Tick {lastTick = tick}</p>
+                            {/if}
+                        {/if}
+                        <FlowCard index={Number(index)} flow={f[1]} tags={tags} />
                     {/each}
                 </div>
             </div>

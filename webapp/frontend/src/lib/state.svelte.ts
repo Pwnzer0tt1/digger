@@ -1,4 +1,4 @@
-import type { CtfConfig, Flow, Flows, FlowsListFilters } from "./schema";
+import type { CtfConfig, Flow, FlowsListFilters } from "./schema";
 
 
 export const selectedFlow: { 
@@ -43,7 +43,7 @@ export const ctfConfig: {
 });
 
 export const flows: {
-    flows: Flows
+    flows: Flow[]
 } = $state({
     flows: []
 });

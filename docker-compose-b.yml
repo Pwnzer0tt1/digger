@@ -38,7 +38,7 @@ services:
       - postgres
 
   postgres:
-    image: postgres:alpine
+    image: postgres:18-alpine3.23
     ports:
       - "5432:5432"
     volumes:

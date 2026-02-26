@@ -47,7 +47,7 @@ services:
       LISTEN_ADDRESS: 0.0.0.0:4242
 
   postgres:
-    image: postgres:alpine
+    image: postgres:18-alpine3.23
     ports:
       - "5432:5432"
     volumes:

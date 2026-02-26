@@ -21,9 +21,10 @@ RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build --release
 
 
 # Last stage
-FROM alpine:20250108
+FROM alpine:3.23
 RUN apk update
-RUN apk add --no-cache suricata netcat-openbsd libpq-dev lua5.4-sql-postgres
+RUN apk add --no-cache netcat-openbsd libpq-dev lua5.4-sql-postgres
+RUN apk add --no-cache suricata --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 
 COPY . /suricata
 COPY --from=builder /src/target/release/*.so /suricata/

@@ -1,0 +1,11 @@
+apiVersion: 1
+
+datasources:
+  - name: Digger Data
+    type: postgres
+    url: postgres:5432
+    user: postgres
+    password: postgres
+    database: postgres
+    isDefault: true
+    editable: true

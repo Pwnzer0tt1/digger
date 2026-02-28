@@ -121,7 +121,7 @@
                     }
                     flowAppProto[e.event_type].push(JSON.parse(new TextDecoder().decode(Uint8Array.from(e.data)))[e.event_type]);
                 }
-                else {
+                else if (e.event_type === "fileinfo") {
                     if (!fileinfos[json.flow.app_proto]) {
                         fileinfos[json.flow.app_proto] = [];
                     }
@@ -138,6 +138,10 @@
                         sha256: d.sha256,
                         tx_id: d.tx_id
                     });
+                }
+                else if (e.event_type === "anomaly") {
+                    //const d = JSON.parse(new TextDecoder().decode(Uint8Array.from(e.data))).anomaly;
+                    //console.log(d);
                 }
             }
         }

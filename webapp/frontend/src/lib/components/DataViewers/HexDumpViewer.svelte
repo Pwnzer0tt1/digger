@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount } from "svelte";
+
 	let { sha256, blob }: { sha256: string, blob: Uint8Array } = $props();
 
     let offset: string[] = [];
@@ -17,7 +19,67 @@
     let startIndex: number | undefined = undefined;
     let endIndex: number | undefined = undefined;
     let shiftPressed = false;
+    let cellIndex: number = $state(-1);
 
+    onMount(() => {
+        document.addEventListener("mousemove", (e) => {          
+            if (e.target.classList.contains("hex-cell") || e.target.classList.contains("text-cell")) {
+                if (e.target.parentNode.parentNode.parentNode.getAttribute("data-hash") === sha256) {
+                    cellIndex = Number(e.target.getAttribute("data-index"));
+                }
+            }
+        });
+        
+        document.addEventListener("click", (e) => {
+            if (e.target.classList.contains("hex-cell") || e.target.classList.contains("text-cell")) {
+                if (e.target.parentNode.parentNode.parentNode.getAttribute("data-hash") === sha256) {
+                    const index = Number(e.target.getAttribute("data-index"));
+                    if (shiftPressed) {
+                        if (index === startIndex) {
+                            startIndex = undefined;
+                        }
+                        else if (index === endIndex) {
+                            endIndex = undefined;
+                        }
+                        else if (startIndex === undefined && endIndex === undefined) {
+                            startIndex = index;
+                        }
+                        else if (startIndex === undefined && endIndex !== undefined) {
+                            if (index > endIndex) {
+                                startIndex = endIndex;
+                                endIndex = index;
+                            }
+                            else {
+                                startIndex = index;
+                            }
+                        }
+                        else if (startIndex !== undefined && endIndex !== undefined) {
+                            if (index < startIndex) {
+                                startIndex = index;
+                            }
+                            else {
+                                endIndex = index;
+                            }
+                        }
+                        else if (startIndex !== undefined) {
+                            if (index < startIndex) {
+                                endIndex = startIndex;
+                                startIndex = index;
+                            }
+                            else {
+                                endIndex = index;
+                            }
+                        }
+                    }
+                    else {
+                        startIndex = undefined;    
+                        endIndex = undefined;
+                    }
+                }
+            }
+        });
+    });
+    
     function shiftChange(e: KeyboardEvent) {
         if (e.target) {
             let el = e.target as HTMLElement;
@@ -27,120 +89,48 @@
         }
     }
 
-    function overCell(e: any) {
-        const elIndex = Number(e.currentTarget.getAttribute("data-index"));
-        const hexCells = document.getElementsByClassName(`${sha256}-hex`) as HTMLCollectionOf<HTMLDivElement>;
-        const textCells = document.getElementsByClassName(`${sha256}-text`) as HTMLCollectionOf<HTMLDivElement>;
-
-        for (let index = 0; index < blob.length; index++) {
-            let hexEl = hexCells.item(index);
-            let textEl = textCells.item(index);
-
-            if (hexEl === null || textEl === null) {
-                continue;
+    function cellColor(index: number) {
+        let color = "#7e9ca6";
+        let isIncluded = false;
+        if (startIndex !== undefined && endIndex === undefined) {
+            if (cellIndex > startIndex && index > startIndex && index <= cellIndex) {    
+                color = "#7e9ca6";
+                isIncluded = true;
             }
-
-            if (index === startIndex || index === endIndex) {
-                continue;
-            }
-
-            let isIncluded = false;
-            if (startIndex !== undefined && endIndex === undefined) {
-                if (elIndex > startIndex && index > startIndex && index <= elIndex) {    
-                    hexEl.style.backgroundColor = "#7e9ca6";
-                    textEl.style.backgroundColor = "#7e9ca6";
-                    isIncluded = true;
-                }
-                else if (index >= elIndex && index < startIndex) {
-                    hexEl.style.backgroundColor = "#7e9ca6";
-                    textEl.style.backgroundColor = "#7e9ca6";
-                    isIncluded = true;
-                }
-            }
-            else if (startIndex === undefined && endIndex !== undefined) {
-                if (elIndex > endIndex && index > endIndex && index <= elIndex) {    
-                    hexEl.style.backgroundColor = "#7e9ca6";
-                    textEl.style.backgroundColor = "#7e9ca6";
-                    isIncluded = true;
-                }
-                else if (index >= elIndex && index < endIndex) {
-                    hexEl.style.backgroundColor = "#7e9ca6";
-                    textEl.style.backgroundColor = "#7e9ca6";
-                    isIncluded = true;
-                }
-            }
-            else if (startIndex !== undefined && endIndex !== undefined) {
-                if (index > startIndex && index < endIndex) {    
-                    hexEl.style.backgroundColor = "#7e9ca6";
-                    textEl.style.backgroundColor = "#7e9ca6";
-                    isIncluded = true;
-                }
-            }
-
-            if (index === elIndex) {
-                hexEl.style.backgroundColor = "#5a84a0";
-                textEl.style.backgroundColor = "#5a84a0";
-            }
-            else if (!isIncluded) {
-                hexEl.style.backgroundColor = "#353535";
-                textEl.style.backgroundColor = "#353535";
+            else if (index >= cellIndex && index < startIndex) {
+                color = "#7e9ca6";
+                isIncluded = true;
             }
         }
-    }
-
-    function selectCell(e: any) {
-        let elIndex = Number(e.currentTarget.getAttribute("data-index"));
-        let hexCell = (document.getElementsByClassName(`${sha256}-hex`) as HTMLCollectionOf<HTMLDivElement>).item(elIndex);
-        let textCell = (document.getElementsByClassName(`${sha256}-text`) as HTMLCollectionOf<HTMLDivElement>).item(elIndex);
-
-        if (hexCell) {
-            hexCell.style.backgroundColor = "#066bd6";
-        }
-        if (textCell) {
-            textCell.style.backgroundColor = "#066bd6";
-        }
-
-        if (shiftPressed) {
-            if (elIndex === startIndex) {
-                startIndex = undefined;
+        else if (startIndex === undefined && endIndex !== undefined) {
+            if (cellIndex > endIndex && index > endIndex && index <= cellIndex) {    
+                color = "#7e9ca6";
+                isIncluded = true;
             }
-            else if (elIndex === endIndex) {
-                endIndex = undefined;
-            }
-            else if (startIndex === undefined && endIndex === undefined) {
-                startIndex = elIndex;
-            }
-            else if (startIndex === undefined && endIndex !== undefined) {
-                if (elIndex > endIndex) {
-                    startIndex = endIndex;
-                    endIndex = elIndex;
-                }
-                else {
-                    startIndex = elIndex;
-                }
-            }
-            else if (startIndex !== undefined && endIndex !== undefined) {
-                if (elIndex < startIndex) {
-                    startIndex = elIndex;
-                }
-                else {
-                    endIndex = elIndex;
-                }
-            }
-            else if (startIndex !== undefined) {
-                if (elIndex < startIndex) {
-                    endIndex = startIndex;
-                    startIndex = elIndex;
-                }
-                else {
-                    endIndex = elIndex;
-                }
+            else if (index >= cellIndex && index < endIndex) {
+                color = "#7e9ca6";
+                isIncluded = true;
             }
         }
-        else {
-            startIndex = undefined;    
-            endIndex = undefined;
+        else if (startIndex !== undefined && endIndex !== undefined) {
+            if (index > startIndex && index < endIndex) {    
+                color = "#7e9ca6";
+                isIncluded = true;
+            }
         }
+  
+        if (index === cellIndex) {
+            color = "#5a84a0";
+        }
+        else if (!isIncluded) {
+            color = "#353535";
+        }
+        
+        if (index === startIndex || index === endIndex) {
+            color = "#066bd6";
+        }
+        
+        return color;
     }
 
     function copyBytes(e: ClipboardEvent) {
@@ -154,23 +144,23 @@
 
 <svelte:document onkeydown={shiftChange} onkeyup={shiftChange} />
 
-<div class="d-flex gap-3 text-light rounded" style="background-color: #353535;">
+<div data-hash={sha256} class="d-flex gap-3 text-light rounded" style="background-color: #353535;">
     <div class="rounded" style="background-color: #545454;">
-        {#each offset as o}
+        {#each offset as o, index (index)}
             <div class="px-2" style="height: 24px;">{o}</div>
         {/each}
     </div>
     <div style="flex: 1 0 40%;" oncopy={copyBytes}>
         <div class="d-flex align-content-start flex-wrap">
-            {#each Object.entries(hex) as [i, h]}
-                <div data-index={i} onclick={selectCell} onmouseover={overCell} class="{sha256}-hex hex-cell text-center" role="none" onfocus={(e) => {}}>{h}</div>
+            {#each hex as h, index (index)}
+                <div data-index={index} style="background-color: {cellColor(index)};" class="hex-cell text-center" role="none">{h}</div>
             {/each}
         </div>
     </div>
     <div style="flex: 1 0 40%;" oncopy={copyBytes}>
         <div class="d-flex align-content-start flex-wrap">
-            {#each Object.entries(text) as [i, t]}
-                <div data-index={i} onclick={selectCell} onmouseover={overCell} class="{sha256}-text text-cell text-center" role="none" onfocus={(e) => {}}>{t}</div>
+            {#each text as t, index (index)}
+                <div data-index={index} style="background-color: {cellColor(index)};" class="text-cell text-center" role="none">{t}</div>
             {/each}
         </div>
     </div>
@@ -183,6 +173,6 @@
     }
 
     .hex-cell::selection, .text-cell::selection {
-        color:white;
+        color: white;
     }
 </style>

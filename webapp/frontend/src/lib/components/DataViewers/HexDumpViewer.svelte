@@ -19,13 +19,69 @@
     let startIndex: number | undefined = undefined;
     let endIndex: number | undefined = undefined;
     let shiftPressed = false;
-    let cellIndex: number = $state(-1);
 
+    let dumpTable: HTMLDivElement;
+    let hexCells: HTMLCollectionOf<HTMLDivElement>;
+    let textCells: HTMLCollectionOf<HTMLDivElement>;
+    
     onMount(() => {
+        hexCells = dumpTable.getElementsByClassName("hex-cell") as HTMLCollectionOf<HTMLDivElement>;
+        textCells = dumpTable.getElementsByClassName("text-cell") as HTMLCollectionOf<HTMLDivElement>;
+      
         document.addEventListener("mousemove", (e) => {          
             if (e.target.classList.contains("hex-cell") || e.target.classList.contains("text-cell")) {
                 if (e.target.parentNode.parentNode.parentNode.getAttribute("data-hash") === sha256) {
-                    cellIndex = Number(e.target.getAttribute("data-index"));
+                    let cellIndex = Number(e.target.getAttribute("data-index"));
+                    for (let index = 0; index < blob.length; index++) {
+                        let hexEl = hexCells.item(index);
+                        let textEl = textCells.item(index);
+                        let isIncluded = false;
+                        if (startIndex !== undefined && endIndex === undefined) {
+                            if (cellIndex > startIndex && index > startIndex && index <= cellIndex) {
+                                hexEl.style.background = "#7e9ca6";
+                                textEl.style.background = "#7e9ca6";
+                                isIncluded = true;
+                            }
+                            else if (index >= cellIndex && index < startIndex) {
+                                hexEl.style.background = "#7e9ca6";
+                                textEl.style.background = "#7e9ca6";
+                                isIncluded = true;
+                            }
+                        }
+                        else if (startIndex === undefined && endIndex !== undefined) {
+                            if (cellIndex > endIndex && index > endIndex && index <= cellIndex) {    
+                                hexEl.style.background = "#7e9ca6";
+                                textEl.style.background = "#7e9ca6";
+                                isIncluded = true;
+                            }
+                            else if (index >= cellIndex && index < endIndex) {
+                                hexEl.style.background = "#7e9ca6";
+                                textEl.style.background = "#7e9ca6";
+                                isIncluded = true;
+                            }
+                        }
+                        else if (startIndex !== undefined && endIndex !== undefined) {
+                            if (index > startIndex && index < endIndex) {    
+                                hexEl.style.background = "#7e9ca6";
+                                textEl.style.background = "#7e9ca6";
+                                isIncluded = true;
+                            }
+                        }
+                  
+                        if (index === cellIndex) {
+                            hexEl.style.background = "#5a84a0";
+                            textEl.style.background = "#5a84a0";
+                        }
+                        else if (!isIncluded) {
+                            hexEl.style.background = "#353535";
+                            textEl.style.background = "#353535";
+                        }
+                        
+                        if (index === startIndex || index === endIndex) {
+                            hexEl.style.background = "#066bd6";
+                            textEl.style.background = "#066bd6";
+                        }
+                    }
                 }
             }
         });
@@ -89,50 +145,6 @@
         }
     }
 
-    function cellColor(index: number) {
-        let color = "#7e9ca6";
-        let isIncluded = false;
-        if (startIndex !== undefined && endIndex === undefined) {
-            if (cellIndex > startIndex && index > startIndex && index <= cellIndex) {    
-                color = "#7e9ca6";
-                isIncluded = true;
-            }
-            else if (index >= cellIndex && index < startIndex) {
-                color = "#7e9ca6";
-                isIncluded = true;
-            }
-        }
-        else if (startIndex === undefined && endIndex !== undefined) {
-            if (cellIndex > endIndex && index > endIndex && index <= cellIndex) {    
-                color = "#7e9ca6";
-                isIncluded = true;
-            }
-            else if (index >= cellIndex && index < endIndex) {
-                color = "#7e9ca6";
-                isIncluded = true;
-            }
-        }
-        else if (startIndex !== undefined && endIndex !== undefined) {
-            if (index > startIndex && index < endIndex) {    
-                color = "#7e9ca6";
-                isIncluded = true;
-            }
-        }
-  
-        if (index === cellIndex) {
-            color = "#5a84a0";
-        }
-        else if (!isIncluded) {
-            color = "#353535";
-        }
-        
-        if (index === startIndex || index === endIndex) {
-            color = "#066bd6";
-        }
-        
-        return color;
-    }
-
     function copyBytes(e: ClipboardEvent) {
         if (startIndex !== undefined && endIndex !== undefined) {
             e.clipboardData?.setData("text/plain", hex.slice(startIndex, endIndex + 1).join(" "));
@@ -144,7 +156,7 @@
 
 <svelte:document onkeydown={shiftChange} onkeyup={shiftChange} />
 
-<div data-hash={sha256} class="d-flex gap-3 text-light rounded" style="background-color: #353535;">
+<div bind:this={dumpTable} data-hash={sha256} class="d-flex gap-3 text-light rounded" style="background-color: #353535;">
     <div class="rounded" style="background-color: #545454;">
         {#each offset as o, index (index)}
             <div class="px-2" style="height: 24px;">{o}</div>
@@ -153,14 +165,14 @@
     <div style="flex: 1 0 40%;" oncopy={copyBytes}>
         <div class="d-flex align-content-start flex-wrap">
             {#each hex as h, index (index)}
-                <div data-index={index} style="background-color: {cellColor(index)};" class="hex-cell text-center" role="none">{h}</div>
+                <div data-index={index} class="hex-cell text-center">{h}</div>
             {/each}
         </div>
     </div>
     <div style="flex: 1 0 40%;" oncopy={copyBytes}>
         <div class="d-flex align-content-start flex-wrap">
             {#each text as t, index (index)}
-                <div data-index={index} style="background-color: {cellColor(index)};" class="text-cell text-center" role="none">{t}</div>
+                <div data-index={index} class="text-cell text-center">{t}</div>
             {/each}
         </div>
     </div>

@@ -8,8 +8,6 @@
         appProto: string[]
     } = $props();
     
-    let lastTick = -1;
-    
     let innerHeight = $state(0);
     let sideBarHeight = $state(0);
     let autoUpdateBtnHeight = $state(0);
@@ -195,15 +193,16 @@
         {:else}
             <div class="overflow-y-scroll">
                 <div class="list-group list-group-flush m-1 rounded">
-                    {#each Object.entries(flows.flows) as f, index (f[0])}
+                    {#each flows.flows as flow, index (index)}
                         {#if tickInfo.tickNumber > 0}
                             {@const startTs = Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000)}
-                            {@const tick = Math.floor((Number(f[1].ts_start) / 1000000 - startTs) / ctfConfig.config.tick_length)}
+                            {@const tick = Math.floor((Number(flow.ts_start) / 1000000 - startTs) / ctfConfig.config.tick_length)}
+                            {@const lastTick = index === 0 ? -1 : Math.floor((Number(flows.flows[index - 1].ts_start) / 1000000 - startTs) / ctfConfig.config.tick_length)}
                             {#if tick !== lastTick}
-                                <p class="list-group-item fw-bold mb-0 text-center text-bg-secondary">Tick {lastTick = tick}</p>
+                                <p class="list-group-item fw-bold mb-0 text-center text-bg-secondary">Tick {tick}</p>
                             {/if}
                         {/if}
-                        <FlowCard index={Number(index)} flow={f[1]} tags={tags} />
+                        <FlowCard index={Number(index)} flow={flow} tags={tags} />
                     {/each}
                 </div>
             </div>

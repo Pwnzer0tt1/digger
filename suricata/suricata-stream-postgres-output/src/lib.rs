@@ -57,7 +57,7 @@ extern "C" fn streaming_log(
     let data_slice = unsafe { std::slice::from_raw_parts(data, data_len as usize) };
     
     // Get flow_id
-    let flow_id = unsafe { ffi::flow_get_id(f.read()) as i64 };
+    let flow_id = unsafe { ffi::wrap_FlowGetId(f) as i64 };
     let count = match context.flow_stream_counter.get_mut(&flow_id) {
         Some(count) => {
             *count += 1;
@@ -68,13 +68,13 @@ extern "C" fn streaming_log(
             0
         }
     };
-    
+        
     // Send stream buffer to database thread
     context.count += 1;
     let stream = Stream {
         flow_id,
         count,
-        server_to_client: (flags & 1) as i32,
+        server_to_client: ((flags & 0x8) >> 3) as i32,
         blob: data_slice.to_owned()
     };
     if let Err(_err) = context.tx.send(stream) {

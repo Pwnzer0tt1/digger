@@ -6,12 +6,31 @@
 # This file has been modified from the original version.
 # Licensed under GPL-3.0
 
-# Build stage
-FROM rust:1.87.0-alpine3.22 AS builder
+# Plugins build stage
+FROM rust:1.93-alpine3.23 AS builder
+
+RUN apk update
+RUN apk add --no-cache gcc musl-dev pkgconf pcre2-dev make jansson-dev libpcap-dev libcap-ng-dev libunwind-dev lz4-dev file-dev rust cargo
+
+# Compile from source LibYAML because not found in Alpine registry
+RUN wget http://pyyaml.org/download/libyaml/yaml-0.2.5.tar.gz -P /tmp
+RUN tar xzvf /tmp/yaml-0.2.5.tar.gz
+WORKDIR /yaml-0.2.5/
+RUN ./configure
+RUN make
+RUN make install
+
+WORKDIR /
+RUN wget https://www.openinfosecfoundation.org/download/suricata-8.0.3.tar.gz -P /tmp
+RUN tar xzvf /tmp/suricata-8.0.3.tar.gz
+WORKDIR /suricata-8.0.3/
+RUN ./configure
 
 WORKDIR /src/
 
-RUN apk add --no-cache musl-dev libpq-dev
+RUN apk update
+RUN apk add --no-cache libpq-dev
+#RUN apk add --no-cache musl-dev libpq-dev
 
 COPY Cargo.lock Cargo.toml /src/
 COPY suricata-eve-postgres-output/ /src/suricata-eve-postgres-output/

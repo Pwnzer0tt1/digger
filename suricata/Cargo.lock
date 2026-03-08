@@ -433,6 +433,7 @@ dependencies = [
 name = "suricata-stream-postgres-output"
 version = "0.1.0"
 dependencies = [
+ "cc",
  "chrono",
  "diesel",
  "diesel_migrations",

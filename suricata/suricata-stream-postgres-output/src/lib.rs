@@ -1,0 +1,162 @@
+// Copyright (C) 2025 Pwnzer0tt1
+// Licensed under GPL-3.0
+
+use std::{collections::HashMap, os::raw::{c_int, c_void}, sync::mpsc};
+
+mod database;
+mod ffi;
+mod schema;
+mod models;
+
+// Default configuration values.
+const DEFAULT_DATABASE_URI: &str = "postgresql://postgres@postgres:5432/postgres"; 
+const DEFAULT_BUFFER_SIZE: &str = "1000";
+
+#[derive(Debug, Clone)]
+struct Config {
+    db_url: String,
+    buffer: usize,
+}
+
+impl Config {
+    fn new() -> Self {
+        Self {
+            db_url: std::env::var("DATABASE_URL").unwrap_or(DEFAULT_DATABASE_URI.into()),
+            buffer: std::env::var("TCP_BUFFER")
+                .unwrap_or(DEFAULT_BUFFER_SIZE.into())
+                .parse()
+                .expect("TCP_BUFFER is not an integer"),
+        }
+    }
+}
+
+struct Stream {
+    flow_id: i64,
+    count: i32,
+    server_to_client: i32,
+    blob: Vec<u8>
+}
+
+struct Context {
+    tx: mpsc::SyncSender<Stream>,
+    count: usize,
+    flow_stream_counter: HashMap<i64, i32>
+}
+
+extern "C" fn streaming_log(
+    _thread_vars: *mut *mut c_void, // ThreadVars *
+    thread_data: *mut *mut c_void,
+    f: *const ffi::Flow, // Flow *
+    data: *const u8,
+    data_len: u32,
+    _tx_id: u64,
+    flags: u8
+) -> c_int {
+    // Handle FFI arguments
+    let context = unsafe { &mut *(thread_data as *mut Context) };
+    let data_slice = unsafe { std::slice::from_raw_parts(data, data_len as usize) };
+    
+    // Get flow_id
+    let flow_id = unsafe { ffi::flow_get_id(f.read()) as i64 };
+    let count = match context.flow_stream_counter.get_mut(&flow_id) {
+        Some(count) => {
+            *count += 1;
+            *count
+        },
+        None => {
+            context.flow_stream_counter.insert(flow_id, 0);
+            0
+        }
+    };
+    
+    // Send stream buffer to database thread
+    context.count += 1;
+    let stream = Stream {
+        flow_id,
+        count,
+        server_to_client: (flags & 1) as i32,
+        blob: data_slice.to_owned()
+    };
+    if let Err(_err) = context.tx.send(stream) {
+        log::error!("Failed to send stream to database thread.");
+        return -1;
+    }
+    
+    0
+}
+
+extern "C" fn streaming_thread_init(
+    _thread_vars: *mut *mut c_void, // ThreadVars *
+    _initdata: *const *mut c_void,
+    thread_data: *mut *mut c_void
+) -> c_int {
+    // Load configuration
+    let config = Config::new();
+    
+    // Create thread context
+    let (tx, rx) = mpsc::sync_channel(config.buffer);
+    let mut database_client = match database::Database::new(config.db_url, rx) {
+        Ok(client) => client,
+        Err(err) => {
+            log::error!("Failed to initialize database client: {err:?}");
+            panic!()
+        }
+    };
+    std::thread::spawn(move || database_client.run());
+    let context_ptr = Box::into_raw(Box::new(Context {
+        tx,
+        count: 0,
+        flow_stream_counter: HashMap::new(),
+    }));
+
+    unsafe {
+        *thread_data = context_ptr.cast();
+    }
+    0
+}
+
+extern "C" fn streaming_thread_deinit(
+    _thread_vars: *mut *mut c_void,
+    thread_data: *mut *mut c_void
+) {
+    let context = unsafe { Box::from_raw(thread_data.cast::<Context>()) };
+    log::info!("PostgreSQL output finished: count={}", context.count);
+    std::mem::drop(context);
+}
+
+extern "C" fn plugin_init() {
+    // Init Rust logger
+    // don't log using `suricata` crate to reduce build time.
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"));
+    
+    // Register new TCP stream logger
+    if !unsafe {
+        ffi::SCOutputRegisterStreamingLogger(
+            ffi::LOGGER_USER,
+            c"tcp-postgres".as_ptr(),
+            streaming_log,
+            std::ptr::null_mut(),
+            ffi::SCOutputStreamingType::StreamingTcpData,
+            streaming_thread_init,
+            streaming_thread_deinit
+        )
+    } == 0
+    {
+        log::error!("Failed to register postgres plugin");
+    }
+}
+
+/// Plugin entrypoint, registers [`plugin_init`] function in Suricata
+#[no_mangle]
+extern "C" fn SCPluginRegister() -> *const ffi::SCPlugin {
+    let plugin = ffi::SCPlugin {
+        version: ffi::SC_API_VERSION,
+        suricata_version: ffi::SC_PACKAGE_VERSION.as_ptr(),
+        name: c"TCP stream data PostgreSQL Output".as_ptr(),
+        plugin_version: c"0.1.0".as_ptr(),
+        license: c"GPL-3.0".as_ptr(),
+        author: c"Pwnzer0tt1".as_ptr(),
+        Init: plugin_init
+    };
+    Box::into_raw(Box::new(plugin))
+}

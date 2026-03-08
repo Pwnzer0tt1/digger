@@ -208,7 +208,7 @@
 {#await flowData}
     Loading...
 {:then flowData}
-    <div class="vstack gap-3">
+    <div class="vstack gap-2">
         <!-- Flow card -->
         <div class="hstack gap-2 align-items-stretch">
             <div class="card p-2 border-secondary">

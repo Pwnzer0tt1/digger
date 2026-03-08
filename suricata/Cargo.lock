@@ -430,6 +430,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "suricata-stream-postgres-output"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "diesel",
+ "diesel_migrations",
+ "dotenvy",
+ "env_logger",
+ "log",
+]
+
+[[package]]
 name = "syn"
 version = "2.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"

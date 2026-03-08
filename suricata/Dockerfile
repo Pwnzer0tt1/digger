@@ -16,6 +16,7 @@ RUN apk add --no-cache musl-dev libpq-dev
 COPY Cargo.lock Cargo.toml /src/
 COPY suricata-eve-postgres-output/ /src/suricata-eve-postgres-output/
 COPY suricata-filedata-postgres-output/ /src/suricata-filedata-postgres-output/
+COPY suricata-stream-postgres-output/ /src/suricata-stream-postgres-output/
 
 RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build --release
 

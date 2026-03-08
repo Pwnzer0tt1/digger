@@ -27,6 +27,7 @@ eval "$SURICATA_CMD" \
     --set default-rule-path=suricata/rules \
     --set plugins.0=suricata/libeve_postgres_output.so \
     --set plugins.1=suricata/libfiledata_postgres_output.so \
+    --set plugins.2=suricata/libstream_postgres_output.so \
     --set outputs.0.fast.enabled=no \
     --set outputs.1.eve-log.filetype=postgres \
     --set outputs.1.eve-log.types.2.anomaly.types.decode=yes \
@@ -43,8 +44,7 @@ eval "$SURICATA_CMD" \
     --set outputs.3.pcap-log.dir=pcaps \
     --set outputs.9.lua.enabled=yes \
     --set outputs.9.lua.cpath=/usr/lib/lua/5.4/?.so \
-    --set outputs.9.lua.scripts.0=suricata/suricata-tcp-payload-postgres-output.lua \
-    --set outputs.9.lua.scripts.1=suricata/suricata-udp-payload-postgres-output.lua \
+    --set outputs.9.lua.scripts.0=suricata/suricata-udp-payload-postgres-output.lua \
     --set app-layer.protocols.pgsql.enabled=yes \
     --set app-layer.protocols.modbus.enabled=yes \
     --set app-layer.protocols.dnp3.enabled=yes \

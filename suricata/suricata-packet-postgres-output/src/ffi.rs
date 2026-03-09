@@ -21,39 +21,38 @@ pub struct SCPlugin {
 }
 
 #[repr(C)]
-pub struct Flow {
+pub struct Packet {
     _opaque: [u8; 0]
 }
 
-pub const OUTPUT_STREAMING_FLAG_TO_CLIENT: u8 = 0x8;
+pub const FLOW_PKT_TOCLIENT: u8 = 0x2;
 
 pub type LoggerId = c_uint;
-pub const LOGGER_USER: LoggerId = 27;
-pub type SCStreamingLogger = extern "C" fn(
+pub const LOGGER_USER: LoggerId = 28;
+pub type PacketLogger = extern "C" fn(
     *mut *mut c_void, // ThreadVars *
     thread_data: *mut *mut c_void,
-    f: *const Flow, // Flow *
-    data: *const u8,
-    data_len: u32,
-    tx_id: u64,
-    flags: u8
+    p: *const Packet
 ) -> c_int;
 
-#[repr(C)]
-pub enum SCOutputStreamingType {
-    StreamingTcpData = 0,
-    StreamingHttpBodies = 1
-}
+pub type PacketLogCondition = extern "C" fn(
+    *mut *mut c_void, // ThreadVars *
+    thread_data: *mut *mut c_void,
+    p: *const Packet
+) -> bool;
 
 extern "C" {
-    pub fn wrap_FlowGetId(flow: *const Flow) -> u64;
+    pub fn get_flow_id(packet: *const Packet) -> u64;
+    pub fn get_packet_payload_len(packet: *const Packet) -> u16;
+    pub fn get_packet_payload(packet: *const Packet) -> *const u8;
+    pub fn wrap_PKT_IS_TOCLIENT(packet: *const Packet) -> u8;
     
-    pub fn SCOutputRegisterStreamingLogger(
+    pub fn SCOutputRegisterPacketLogger(
         logger_id: LoggerId,
         name: *const c_char,
-        LogFunc: SCStreamingLogger,
+        LogFunc: PacketLogger,
+        ConditionFunc: PacketLogCondition,
         initdata: *mut c_void,
-        stream_type: SCOutputStreamingType,
         ThreadInit: extern "C" fn(*mut *mut c_void, *const *mut c_void, *mut *mut c_void) -> c_int,
         ThreadDeinit: extern "C" fn(*mut *mut c_void, *mut *mut c_void)
     ) -> c_int;

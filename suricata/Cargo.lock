@@ -430,6 +430,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "suricata-packet-postgres-output"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "chrono",
+ "diesel",
+ "diesel_migrations",
+ "dotenvy",
+ "env_logger",
+ "log",
+]
+
+[[package]]
 name = "suricata-stream-postgres-output"
 version = "0.1.0"
 dependencies = [

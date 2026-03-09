@@ -20,6 +20,7 @@ RUN ./configure
 RUN make
 RUN make install
 
+# Build Suricata headers
 WORKDIR /
 RUN wget https://www.openinfosecfoundation.org/download/suricata-8.0.3.tar.gz -P /tmp
 RUN tar xzvf /tmp/suricata-8.0.3.tar.gz
@@ -30,12 +31,12 @@ WORKDIR /src/
 
 RUN apk update
 RUN apk add --no-cache libpq-dev
-#RUN apk add --no-cache musl-dev libpq-dev
 
 COPY Cargo.lock Cargo.toml /src/
 COPY suricata-eve-postgres-output/ /src/suricata-eve-postgres-output/
 COPY suricata-filedata-postgres-output/ /src/suricata-filedata-postgres-output/
 COPY suricata-stream-postgres-output/ /src/suricata-stream-postgres-output/
+COPY suricata-packet-postgres-output/ /src/suricata-packet-postgres-output/
 
 RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build --release
 

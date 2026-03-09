@@ -5,6 +5,6 @@
 #include <stdint.h>
 
 
-uint64_t  wrap_FlowGetId(const Flow *f) {
+uint64_t wrap_FlowGetId(const Flow *f) {
     return FlowGetId(f);
 }

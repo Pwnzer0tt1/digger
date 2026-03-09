@@ -1,7 +1,7 @@
 // Copyright (C) 2025 Pwnzer0tt1
 // Licensed under GPL-3.0
 
-use std::{collections::HashMap, ffi::{c_int, c_void}, sync::mpsc};
+use std::{collections::HashMap, ffi::{c_int, c_void}, slice, sync::mpsc};
 
 mod database;
 mod ffi;
@@ -15,7 +15,7 @@ const DEFAULT_BUFFER_SIZE: &str = "1000";
 #[derive(Debug, Clone)]
 struct Config {
     db_url: String,
-    buffer: usize,
+    buffer: usize
 }
 
 impl Config {
@@ -30,7 +30,7 @@ impl Config {
     }
 }
 
-struct Stream {
+struct Payload {
     flow_id: i64,
     count: i32,
     server_to_client: i32,
@@ -38,54 +38,64 @@ struct Stream {
 }
 
 struct Context {
-    tx: mpsc::SyncSender<Stream>,
+    tx: mpsc::SyncSender<Payload>,
     count: usize,
-    flow_stream_counter: HashMap<i64, i32>
+    flow_packet_counter: HashMap<i64, i32>
 }
 
-extern "C" fn streaming_log(
+extern "C" fn packet_log(
     _thread_vars: *mut *mut c_void, // ThreadVars *
     thread_data: *mut *mut c_void,
-    f: *const ffi::Flow, // Flow *
-    data: *const u8,
-    data_len: u32,
-    _tx_id: u64,
-    flags: u8
+    p: *const ffi::Packet
 ) -> c_int {
     // Handle FFI arguments
     let context = unsafe { &mut *(thread_data as *mut Context) };
-    let data_slice = unsafe { std::slice::from_raw_parts(data, data_len as usize) };
+    // Get packet payload len
+    let data_len = unsafe { ffi::get_packet_payload_len(p) };
+    // Get packet payload pointer
+    let data = unsafe { ffi::get_packet_payload(p) };
+    let data_slice = unsafe { slice::from_raw_parts(data, data_len as usize) };
     
     // Get flow_id
-    let flow_id = unsafe { ffi::wrap_FlowGetId(f) as i64 };
-    let count = match context.flow_stream_counter.get_mut(&flow_id) {
+    let flow_id = unsafe { ffi::get_flow_id(p) as i64 };
+    let count = match context.flow_packet_counter.get_mut(&flow_id) {
         Some(count) => {
             *count += 1;
             *count
         },
         None => {
-            context.flow_stream_counter.insert(flow_id, 0);
+            context.flow_packet_counter.insert(flow_id, 0);
             0
         }
     };
-        
-    // Send stream buffer to database thread
+    
+    let direction = unsafe { ffi::wrap_PKT_IS_TOCLIENT(p) >> 1 };
+    
+    // Send packet payload to database thread
     context.count += 1;
-    let stream = Stream {
+    let payload = Payload {
         flow_id,
         count,
-        server_to_client: ((flags & ffi::OUTPUT_STREAMING_FLAG_TO_CLIENT) >> 3) as i32,
+        server_to_client: direction as i32,
         blob: data_slice.to_owned()
     };
-    if let Err(_err) = context.tx.send(stream) {
-        log::error!("Failed to send stream to database thread.");
+    if let Err(_err) = context.tx.send(payload) {
+        log::error!("Failed to send packet to database thread.");
         return -1;
     }
     
     0
 }
 
-extern "C" fn streaming_thread_init(
+extern "C" fn packet_condition(
+    _thread_vars: *mut *mut c_void, // ThreadVars *
+    _thread_data: *mut *mut c_void,
+    _p: *const ffi::Packet
+) -> bool {
+    true
+}
+
+extern "C" fn packet_thread_init(
     _thread_vars: *mut *mut c_void, // ThreadVars *
     _initdata: *const *mut c_void,
     thread_data: *mut *mut c_void
@@ -106,7 +116,7 @@ extern "C" fn streaming_thread_init(
     let context_ptr = Box::into_raw(Box::new(Context {
         tx,
         count: 0,
-        flow_stream_counter: HashMap::new(),
+        flow_packet_counter: HashMap::new(),
     }));
 
     unsafe {
@@ -115,7 +125,7 @@ extern "C" fn streaming_thread_init(
     0
 }
 
-extern "C" fn streaming_thread_deinit(
+extern "C" fn packet_thread_deinit(
     _thread_vars: *mut *mut c_void,
     thread_data: *mut *mut c_void
 ) {
@@ -131,14 +141,14 @@ extern "C" fn plugin_init() {
     
     // Register new TCP stream logger
     if !unsafe {
-        ffi::SCOutputRegisterStreamingLogger(
+        ffi::SCOutputRegisterPacketLogger(
             ffi::LOGGER_USER,
-            c"tcp-postgres".as_ptr(),
-            streaming_log,
+            c"udp-postgres".as_ptr(),
+            packet_log,
+            packet_condition,
             std::ptr::null_mut(),
-            ffi::SCOutputStreamingType::StreamingTcpData,
-            streaming_thread_init,
-            streaming_thread_deinit
+            packet_thread_init,
+            packet_thread_deinit
         )
     } == 0
     {
@@ -152,7 +162,7 @@ extern "C" fn SCPluginRegister() -> *const ffi::SCPlugin {
     let plugin = ffi::SCPlugin {
         version: ffi::SC_API_VERSION,
         suricata_version: ffi::SC_PACKAGE_VERSION.as_ptr(),
-        name: c"TCP stream data PostgreSQL Output".as_ptr(),
+        name: c"UDP packet data PostgreSQL Output".as_ptr(),
         plugin_version: c"0.1.0".as_ptr(),
         license: c"GPL-3.0".as_ptr(),
         author: c"Pwnzer0tt1".as_ptr(),

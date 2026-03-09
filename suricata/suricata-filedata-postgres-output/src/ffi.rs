@@ -4,8 +4,8 @@
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_int, c_uint, c_void};
 
-// Bindings for Suricata 8.0.0
-pub const SC_PACKAGE_VERSION: &CStr = c"8.0.0";
+// Bindings for Suricata 8.0.3
+pub const SC_PACKAGE_VERSION: &CStr = c"8.0.3";
 pub const SC_API_VERSION: u64 = 0x0800;
 
 /// Rust representation of a C plugin.

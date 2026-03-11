@@ -33,6 +33,7 @@ RUN apk update
 RUN apk add --no-cache libpq-dev
 
 COPY Cargo.lock Cargo.toml /src/
+COPY database/ /src/database/
 COPY suricata-eve-postgres-output/ /src/suricata-eve-postgres-output/
 COPY suricata-filedata-postgres-output/ /src/suricata-filedata-postgres-output/
 COPY suricata-stream-postgres-output/ /src/suricata-stream-postgres-output/

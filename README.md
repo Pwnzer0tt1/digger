@@ -81,7 +81,7 @@ Most of the original code of Shovel has been completly changed.
 
 The webapp shares some similiarities but none of the original files remained, everything is new.
 
-The part related to Suricata is what remain in common with Shovel, except for the use of PostgreSQL as database and Diesel ORM and some minor changes.
+The part related to Suricata is what remain in common with Shovel, except for the use of PostgreSQL as database and Diesel ORM and other changes like the Rust plugins.
 
 An important part that remained the same is the template used for registering the plugins. Thanks to [FCSC-FR](https://github.com/FCSC-FR), in particular [erdnaxe](https://github.com/erdnaxe), we figured how to use Suricata 8.0.0 in Digger without breaking stuff.
 

@@ -1,12 +1,13 @@
 // Copyright (C) 2025 Pwnzer0tt1
 // Licensed under GPL-3.0
 
-use std::{collections::HashMap, ffi::{c_int, c_void}, sync::mpsc};
-
-mod database;
 mod ffi;
-mod schema;
-mod models;
+
+use database::{models, schema, Database, OutputWriter};
+use std::{collections::HashMap, ffi::{c_char, c_int, c_void}, sync::mpsc};
+
+use diesel::RunQueryDsl;
+use suricata_sys::sys::{Flow, SC_API_VERSION, SC_PACKAGE_VERSION, SCPlugin};
 
 // Default configuration values.
 const DEFAULT_DATABASE_URI: &str = "postgresql://postgres@postgres:5432/postgres"; 
@@ -37,6 +38,20 @@ struct Stream {
     blob: Vec<u8>
 }
 
+impl OutputWriter for Stream {
+    fn write_output(&self, conn: &mut diesel::PgConnection) -> diesel::QueryResult<usize> {
+        diesel::insert_into(schema::raw::table)
+            .values(models::NewRaw {
+                flow_id: self.flow_id,
+                count: Some(self.count),
+                server_to_client: Some(self.server_to_client),
+                blob: Some(&self.blob)
+            })
+            .on_conflict_do_nothing()
+            .execute(conn)
+    }
+}
+
 struct Context {
     tx: mpsc::SyncSender<Stream>,
     count: usize,
@@ -46,14 +61,14 @@ struct Context {
 extern "C" fn streaming_log(
     _thread_vars: *mut *mut c_void, // ThreadVars *
     thread_data: *mut *mut c_void,
-    f: *const ffi::Flow, // Flow *
+    f: *const Flow, // Flow *
     data: *const u8,
     data_len: u32,
     _tx_id: u64,
     flags: u8
 ) -> c_int {
     // Handle FFI arguments
-    let context = unsafe { &mut *(thread_data as *mut Context) };
+    let context = unsafe { &mut *thread_data.cast::<Context>() };
     let data_slice = unsafe { std::slice::from_raw_parts(data, data_len as usize) };
     
     // Get flow_id
@@ -95,7 +110,7 @@ extern "C" fn streaming_thread_init(
     
     // Create thread context
     let (tx, rx) = mpsc::sync_channel(config.buffer);
-    let mut database_client = match database::Database::new(config.db_url, rx) {
+    let mut database_client = match Database::new(config.db_url, rx) {
         Ok(client) => client,
         Err(err) => {
             log::error!("Failed to initialize database client: {err:?}");
@@ -148,15 +163,15 @@ extern "C" fn plugin_init() {
 
 /// Plugin entrypoint, registers [`plugin_init`] function in Suricata
 #[no_mangle]
-extern "C" fn SCPluginRegister() -> *const ffi::SCPlugin {
-    let plugin = ffi::SCPlugin {
-        version: ffi::SC_API_VERSION,
-        suricata_version: ffi::SC_PACKAGE_VERSION.as_ptr(),
+extern "C" fn SCPluginRegister() -> *const SCPlugin {
+    let plugin = SCPlugin {
+        version: SC_API_VERSION,
+        suricata_version: SC_PACKAGE_VERSION.as_ptr() as *const c_char,
         name: c"TCP stream data PostgreSQL Output".as_ptr(),
         plugin_version: c"0.1.0".as_ptr(),
         license: c"GPL-3.0".as_ptr(),
         author: c"Pwnzer0tt1".as_ptr(),
-        Init: plugin_init
+        Init: Some(plugin_init)
     };
     Box::into_raw(Box::new(plugin))
 }

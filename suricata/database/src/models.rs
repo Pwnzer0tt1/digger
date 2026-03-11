@@ -3,8 +3,7 @@
 
 use diesel::prelude::*;
 
-use crate::schema::{alert, other_event, flow, stats};
-
+use crate::schema::{alert, other_event, flow, stats, filedata, raw};
 
 #[derive(Insertable)]
 #[diesel(table_name = flow)]
@@ -47,4 +46,20 @@ pub struct NewOtherEvent<'a> {
 pub struct NewStats<'a> {
     pub timestamp: i64,
     pub data: &'a [u8]
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = filedata)]
+pub struct NewFiledata<'a> {
+    pub sha256: Vec<u8>,
+    pub blob: &'a Vec<u8>
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = raw)]
+pub struct NewRaw<'a> {
+    pub flow_id: i64,
+    pub count: Option<i32>,
+    pub server_to_client: Option<i32>,
+    pub blob: Option<&'a Vec<u8>>
 }

@@ -3,22 +3,6 @@
 
 use std::ffi::{CStr, c_char, c_int, c_uint, c_void};
 
-// Bindings for Suricata 8.0.3
-pub const SC_PACKAGE_VERSION: &CStr = c"8.0.3";
-pub const SC_API_VERSION: u64 = 0x0800;
-
-/// Rust representation of a C plugin.
-#[repr(C)]
-#[allow(non_snake_case)]
-pub struct SCPlugin {
-    pub version: u64,
-    pub suricata_version: *const c_char,
-    pub name: *const c_char,
-    pub plugin_version: *const c_char,
-    pub license: *const c_char,
-    pub author: *const c_char,
-    pub Init: extern "C" fn()
-}
 
 #[repr(C)]
 pub struct Packet {
@@ -46,6 +30,7 @@ extern "C" {
     pub fn get_packet_payload_len(packet: *const Packet) -> u16;
     pub fn get_packet_payload(packet: *const Packet) -> *const u8;
     pub fn wrap_PKT_IS_TOCLIENT(packet: *const Packet) -> u8;
+    pub fn wrap_PacketIsTCP(packet: *const Packet) -> bool;
     
     pub fn SCOutputRegisterPacketLogger(
         logger_id: LoggerId,

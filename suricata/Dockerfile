@@ -37,7 +37,7 @@ COPY database/ /src/database/
 COPY suricata-eve-postgres-output/ /src/suricata-eve-postgres-output/
 COPY suricata-filedata-postgres-output/ /src/suricata-filedata-postgres-output/
 COPY suricata-stream-postgres-output/ /src/suricata-stream-postgres-output/
-COPY suricata-packet-postgres-output/ /src/suricata-packet-postgres-output/
+#COPY suricata-packet-postgres-output/ /src/suricata-packet-postgres-output/
 
 RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build --release
 

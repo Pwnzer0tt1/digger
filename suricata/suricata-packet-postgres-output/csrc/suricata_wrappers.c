@@ -21,3 +21,7 @@ uint8_t *get_packet_payload(const Packet *p) {
 uint8_t wrap_PKT_IS_TOCLIENT(const Packet *p) {
     return PKT_IS_TOCLIENT(p);
 }
+
+bool wrap_PacketIsTCP(const Packet *p) {
+    return PacketIsTCP(p);
+}

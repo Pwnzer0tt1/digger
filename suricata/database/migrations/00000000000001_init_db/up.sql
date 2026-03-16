@@ -1,3 +1,6 @@
+-- Copyright (C) 2025 Pwnzer0tt1
+-- Licensed under GPL-3.0
+
 -- CreateTable
 CREATE TABLE "flow" (
     "id" BIGINT NOT NULL,

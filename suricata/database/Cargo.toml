@@ -12,4 +12,3 @@ log = "0.4.27"
 diesel = { version = "2.2.0", features = ["postgres"] }
 diesel_migrations = "2.2.0"
 dotenvy = "0.15"
-chrono = "0.4.41"

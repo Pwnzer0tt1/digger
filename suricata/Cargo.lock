@@ -115,7 +115,6 @@ dependencies = [
 name = "database"
 version = "0.1.0"
 dependencies = [
- "chrono",
  "diesel",
  "diesel_migrations",
  "dotenvy",
@@ -434,7 +433,6 @@ dependencies = [
 name = "suricata-filedata-postgres-output"
 version = "0.1.0"
 dependencies = [
- "chrono",
  "database",
  "diesel",
  "dotenvy",
@@ -448,7 +446,6 @@ name = "suricata-stream-postgres-output"
 version = "0.1.0"
 dependencies = [
  "cc",
- "chrono",
  "database",
  "diesel",
  "dotenvy",

@@ -12,7 +12,6 @@ mod ffi;
 use std::ffi::{CStr, c_char, c_int, c_void};
 use std::fmt::Debug;
 use std::sync::mpsc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use database::{models, schema, Database, OutputWriter};
 use diesel::RunQueryDsl;
@@ -72,9 +71,6 @@ impl OutputWriter for EveString {
         };
         let (timestamp, _) = timestamp_part.split_once('"').unwrap();
         let timestamp = chrono::DateTime::parse_from_str(timestamp, "%Y-%m-%dT%H:%M:%S%.6f%z").unwrap().timestamp_micros();
-        
-        let start = SystemTime::now();
-        
         match event_type {
             "flow" => {
                 let (_, flow_id_part) = self.0.split_once(r#""flow_id":"#).expect("Missing flow_id field.");
@@ -202,9 +198,6 @@ impl OutputWriter for EveString {
                     data: self.0.as_bytes()
                 };
     
-                let end = SystemTime::now();
-                let duration = end.duration_since(start).unwrap();
-                log::info!("EVE file stats event: {}s", duration.as_secs_f64());
                 diesel::insert_into(schema::stats::table)
                     .values(&new_stats)
                     .execute(conn)

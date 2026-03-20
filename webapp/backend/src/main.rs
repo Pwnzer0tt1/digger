@@ -2,7 +2,7 @@ use std::sync::Mutex;
 
 use actix_web::{App, HttpServer, web};
 use backend::{
-    config::{self, CtfConfig}, db, filedata, flow, stats
+    config::{self, CtfConfig}, db, filedata, flow
 };
 
 #[actix_web::main]
@@ -24,7 +24,6 @@ async fn main() -> std::io::Result<()> {
         let app = App::new()
             .configure(config::init_routes)
             .configure(filedata::init_routes)
-            .configure(stats::init_routes)
             .configure(flow::init_routes)
             .app_data(web::Data::new(pool.clone()))
             .app_data(ctf_config.clone());

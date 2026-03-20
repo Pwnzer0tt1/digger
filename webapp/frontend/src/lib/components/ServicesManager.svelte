@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { ctfConfig, selectedPanel } from "$lib/state.svelte";
-	import Toast from "./Toast.svelte";
+	import { toast } from "svelte-sonner";
 	
-
-    let toast: Toast;
     let serviceToDelete: string | undefined = $state(undefined);
 
     let name = $state("");
@@ -27,11 +25,11 @@
         });
 
         if (res.ok) {
-            toast.show("success", `Service ${name} added`);
+            toast.success(`Service ${name} added`);
             ctfConfig.config = await res.json();
         }
         else {
-            toast.show("danger", `Failed to add service ${name}`, await res.text());
+            toast.error(`Failed to add service ${name}`, { description: await res.text() });
         }
     }
 
@@ -53,11 +51,11 @@
         });
 
         if (res.ok) {
-            toast.show("warning", `Service ${serviceToDelete} deleted`);
+            toast.warning(`Service ${serviceToDelete} deleted`);
             ctfConfig.config = await res.json();
         }
         else {
-            toast.show("danger", `Failed to delete service ${serviceToDelete}`, await res.text())
+            toast.error(`Failed to delete service ${serviceToDelete}`, { description: await res.text() });
         }
     }
 
@@ -90,7 +88,7 @@
             </div>
         </div>
         <div class="d-flex align-content-start flex-wrap gap-2 mb-4">
-            {#each Object.entries(ipports) as [index, ipp]}
+            {#each ipports as ipp, index (index)}
                 <div class="input-group" style="width: 25%;">
                     <input bind:value={ipp.ip} type="text" class="form-control" placeholder="IP" aria-label="IP" required>
                     <span class="input-group-text">:</span>
@@ -107,7 +105,7 @@
         <!-- Services list -->
         <h6 class="text-muted mb-3"><i class="bi bi-list-ul me-2"></i> Configured Services</h6>
         <div class="vstack gap-2">
-            {#each Object.entries(ctfConfig.config.services) as [n, s]}
+            {#each Object.entries(ctfConfig.config.services) as [n, s] (n)}
                 <div class="card p-2">
                     <div class="hstack gap-2">
                         <h5><span class="badge" style="background-color: {s.color};">{n}</span></h5>
@@ -117,7 +115,7 @@
                         </div>
                     </div>
                     <div class="hstack gap-2">
-                        {#each s.ipports as ipport}
+                        {#each s.ipports as ipport, index (index)}
                             <span class="badge text-bg-secondary">{ipport.ip}:{ipport.port}</span>
                         {/each}
                     </div>
@@ -146,6 +144,3 @@
         </div>
     </div>
 </div>
-
-<!-- Toast -->
-<Toast bind:this={toast} />

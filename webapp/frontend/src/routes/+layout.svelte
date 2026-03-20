@@ -17,6 +17,7 @@
     // Prettier
     import "prettier/standalone.js";
 	import { onMount } from "svelte";
+	import { Toaster } from "svelte-sonner";
 
 
     let { children } = $props();
@@ -44,5 +45,7 @@
 <svelte:head>
     <script src={scriptSrc}></script>
 </svelte:head>
+
+<Toaster richColors closeButton position="top-center" expand={true} />
 
 {@render children()}

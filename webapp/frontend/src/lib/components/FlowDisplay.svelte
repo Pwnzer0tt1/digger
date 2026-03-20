@@ -278,7 +278,7 @@
                     <div id="display-app" class="accordion-collapse collapse show">
                         <div class="accordion-body">
                             <div class="vstack gap-3">
-                                {#each Object.entries(flowData.flowAppProto) as  [app_proto, flow_app_proto] }
+                                {#each Object.entries(flowData.flowAppProto) as  [app_proto, flow_app_proto] (app_proto)}
                                     {#if app_proto === "http" || app_proto === "http2"}
                                         <HttpFlow appDataActiveView={appDataActiveView} destPort={flowData.flow.dest_port} fileinfos={flowData.fileinfos[app_proto]} app_proto={app_proto} flow_app_proto={flow_app_proto} />
                                     {:else if app_proto === "websocket"}

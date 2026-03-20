@@ -44,7 +44,7 @@
         <small>{delay.toPrecision(3)} { delay > 1000 ? "s" : "ms" }, { time }</small>
     </div>
     <TagBadge text={appProto.toUpperCase()} />
-    {#each tags as t}
+    {#each tags as t, index (index)}
         {#if flowTags.includes(t.tag)}
             {@const tagId = "tag_" + t.tag.replace(/[^A-Za-z0-9]/g, "_")}
             <TagBadge text={t.tag} color={t.color} count={flow.metadata ? (flow.metadata.flowints ? flow.metadata.flowints[tagId] : undefined) : undefined} />

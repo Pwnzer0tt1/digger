@@ -1,9 +1,6 @@
 <script lang="ts">
 	import { ctfConfig, selectedPanel } from "$lib/state.svelte";
-	import Toast from "./Toast.svelte";
-	
-
-    let toast: Toast;
+	import { toast } from "svelte-sonner";
 
     let start_date = $state(ctfConfig.config.start_date);
     let end_date = $state(ctfConfig.config.end_date);
@@ -24,11 +21,11 @@
 
         ctfConfig.refreshRate = refresh_rate;
         if (res.ok) {
-            toast.show("success", "Settings updated");
+            toast.success("Settings updated");
             ctfConfig.config =  await res.json();
         }
         else {
-            toast.show("danger", "Failed to update settings", JSON.stringify(await res.json()))
+            toast.error("Failed to update settings", { description: JSON.stringify(await res.json()) });
         }
     }
 </script>
@@ -59,6 +56,3 @@
         <button onclick={updateSettings} class="btn btn-primary w-100">Update settings</button>
     </div>
 </div>
-
-<!-- Toast -->
-<Toast bind:this={toast} />

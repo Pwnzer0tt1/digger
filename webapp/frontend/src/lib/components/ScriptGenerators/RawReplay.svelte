@@ -29,7 +29,6 @@
 </script>
 
 <div id="raw-replay-editor" class="rounded-bottom">
-<!--
 #!/usr/bin/env python3
 # Filename: replay-{serviceName}-{data.id}.py
 import json
@@ -70,15 +69,15 @@ r = remote(HOST, {data.port}, typ="{data.proto.toLowerCase()}", timeout=2)
 # payload. If it is the case, then you should loop using EXTRA.
 # for flag_id in EXTRA:
 
-{#each raw as raw_data}
+{#each raw as raw_data, index (index)}
     {#if raw_data.server_to_client === "0"}
-        {#if raw_data.data && raw_data.data[raw_data.data.length - 1] == 10}
-r.sendline({raw_data.data.slice(0, -1)})
+        {#if raw_data.blob && raw_data.blob[raw_data.data.length - 1] == 10}
+r.sendline({raw_data.blob.slice(0, -1)})
         {:else}
-r.send({raw_data.data})
+r.send({raw_data.blob})
         {/if}
     {:else}
-data = r.recvuntil({raw_data.data.slice(-16)})
+data = r.recvuntil({raw_data.blob.slice(-16)})
     {/if}
 {/each}
 
@@ -87,5 +86,4 @@ data = r.recvuntil({raw_data.data.slice(-16)})
 # print(data, flush=True)
 
 r.close()
--->
 </div>

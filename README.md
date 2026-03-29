@@ -40,31 +40,38 @@ making opinionated choices for the frontend. This has a few nice implications:
 - ingest can be a folder of pcaps for non-root CTF, or a live capture (less delay),
 - tags are defined using Suricata rules (regex, libmagic match, HTTP header, etc),
 - no heavy build tools needed, Digger is easy to tweak.
+- a Grafana dashboard for real-time statistics
 
 Moreover, Digger is batteries-included with some Suricata alert rules.
 
 ```
-              ┌───►stats.log                                                  
-              │                                                               
-              │     ┌────►suricata.log                         ctf_config.json
-              │     │                                         ┌───────────────
-              │     │     ┌────►pcaps/*                       │               
-              │     │     │                                   │               
-           ┌──┴─────┴─────┴────────────────┐       ┌──────────▼ ────────┐     
-device     │                               │       │                    │     
-or pcap    │  Suricata with:               │       │                    │     
-──────────►│  - Eve PostgreSQL plugin      │       │  SvelteKit webapp  │     
-           │  - TCP & UDP payloads plugin  │       │                    │     
-           │                               │       │                    │     
-           └──────▲────────┬───────────────┘       └──────────┬─────────┘     
-                  │        │                                  │               
-                  │        │        ┌──────────────────┐      │               
-   suricata.rules │        │        │                  │      │               
-   ───────────────┘        │        │                  │      │               
-                           └───────►│    PostgreSQL    │◄─────┘               
-                                    │                  │                      
-                                    │                  │                      
-                                    └──────────────────┘                      
+              +--->stats.log                                                  
+              |                                                               
+              |     +---->suricata.log                         ctf_config.json
+              |     |                                         +---------------
+              |     |     +---->pcaps/*                       |               
+              |     |     |                                   |               
+           +--+-----+-----+----------+                 +------v-------+       
+device     |                         |                 |              |       
+or pcaps   |                         |                 |              |       
+----------->  Suricata with plugins  |                 |    Webapp    |       
+           |                         |                 |              |       
+           |                         |                 |              |       
+           +------^--------+---------+                 +------+-------+       
+                  |        |                                  |               
+                  |        |        +------------------+      |               
+   suricata.rules |        |        |                  |      |               
+   ---------------+        |        |                  |      |               
+                           +-------->    PostgreSQL    <------+               
+                                    |                  |                      
+                                    |                  |                      
+                                    +--------^---------+                      
+                                             |                                
+                                             |      +--------------+          
+                                             |      |              |          
+                                             +------|   Grafana    |          
+                                                    |              |          
+                                                    +--------------+          
 ```
 
 ## Differences with Shovel
@@ -75,13 +82,14 @@ or pcap    │  Suricata with:               │       │                    �
 - A `run.py` that automatically starts Digger
 - A single PostgreSQL container is used in place of two separated SQLite files
 - Digger is distributed with a GPL-3.0 license
+- TCP raw data is handled by a Rust plugins instead of Lua (work in progress for UDP data)
 
 ### Commonalities with Shovel
 Most of the original code of Shovel has been completly changed.
 
 The webapp shares some similiarities but none of the original files remained, everything is new.
 
-The part related to Suricata is what remain in common with Shovel, except for the use of PostgreSQL as database and Diesel ORM and some minor changes.
+The part related to Suricata is what remain in common with Shovel, except for the use of PostgreSQL as database and Diesel ORM and other changes like the Rust plugins.
 
 An important part that remained the same is the template used for registering the plugins. Thanks to [FCSC-FR](https://github.com/FCSC-FR), in particular [erdnaxe](https://github.com/erdnaxe), we figured how to use Suricata 8.0.0 in Digger without breaking stuff.
 
@@ -319,9 +327,7 @@ You can update this values at runtime from **Settings** in the web interface.
 
 ### Is Suricata `flow_id` really unique?
 
-`flow_id` is derived from timestamp (ms scale) and current flow parameters (such
-as source and destination ports and addresses). See source code:
-<https://github.com/OISF/suricata/blob/suricata-6.0.13/src/flow.h#L680>.
+As of Suricata 8.0.3, `flow_id` is calculated using the hash of the flow and the timestamp in seconds and micro-seconds. See the source code in `flow.h`: <https://doxygen.openinfosecfoundation.org/flow_8h_source.html#l00627>
 
 ---
 
@@ -385,3 +391,6 @@ the GPL compatibility of CC0 and MIT, this fork is distributed under the terms
 of the GNU General Public License, version 3.0 (GPL-3.0).
 
 All future contributions to this repository will be licensed under [GPL-3.0](./LICENSE).
+
+### Logo
+The logo is the icon of the **D-765 Mining Drill** from Industrial Craft 2, that is a mod of Minecraft. Check the wiki: <https://wiki.industrial-craft.net/index.php/Mining_Drill>

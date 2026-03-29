@@ -1,5 +1,5 @@
 # Build frontend stage
-FROM node:22-alpine3.22 AS frontend
+FROM node:24-alpine3.23 AS frontend
 
 WORKDIR /frontend
 
@@ -13,7 +13,7 @@ RUN npm run build
 
 
 # Build backend stage
-FROM rust:1.87.0-alpine3.22 AS backend
+FROM rust:1.93-alpine3.23 AS backend
 
 WORKDIR /backend
 
@@ -25,7 +25,7 @@ RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build --release
 
 
 # Final stage
-FROM alpine:3.22
+FROM alpine:3.23
 
 RUN apk update
 RUN apk add --no-cache libpq-dev libgcc

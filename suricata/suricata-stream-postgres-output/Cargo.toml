@@ -1,0 +1,22 @@
+# Copyright (C) 2025 Pwnzer0tt1
+# Licensed under GPL-3.0
+
+[package]
+name = "suricata-stream-postgres-output"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+name = "stream_postgres_output"
+
+[build-dependencies]
+cc = "1.0"
+
+[dependencies]
+database = { path = "../database" }
+env_logger = { version = "0.11.8", default-features = false }
+log = "0.4.27"
+diesel = { version = "2.2.0", features = ["postgres"] }
+dotenvy = "0.15"
+suricata-sys = "8.0.3"

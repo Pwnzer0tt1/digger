@@ -1,0 +1,1498 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P352550935005935F"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "timezone": [
+          "utc"
+        ],
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "dataset": "postgres",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "P352550935005935F"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT data, to_timestamp(\"timestamp\" / 1000000) FROM stats ORDER BY \"timestamp\" DESC LIMIT 100;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "data",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              },
+              {
+                "parameters": [
+                  {
+                    "name": "\"timestamp\"",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 1,
+            "orderBy": {
+              "property": {
+                "name": "\"timestamp\"",
+                "type": "string"
+              },
+              "type": "property"
+            },
+            "orderByDirection": "DESC"
+          },
+          "table": "stats"
+        }
+      ],
+      "title": "Packets",
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "other",
+                "targetField": "data"
+              }
+            ],
+            "fields": {}
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "Packets",
+                "path": "stats.decoder.pkts"
+              },
+              {
+                "alias": "IPv4",
+                "path": "stats.decoder.ipv4"
+              },
+              {
+                "alias": "IPv6",
+                "path": "stats.decoder.ipv6"
+              },
+              {
+                "alias": "TCP",
+                "path": "stats.decoder.tcp"
+              },
+              {
+                "alias": "UDP",
+                "path": "stats.decoder.udp"
+              },
+              {
+                "alias": "ICMPv4",
+                "path": "stats.decoder.icmpv4"
+              },
+              {
+                "alias": "ICMPv6",
+                "path": "stats.decoder.icmpv6"
+              }
+            ],
+            "source": "data"
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P352550935005935F"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "dataset": "postgres",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT to_timestamp(\"timestamp\" / 1000000), data FROM stats ORDER BY \"timestamp\" DESC LIMIT 100 ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "data",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 100,
+            "orderBy": {
+              "property": {
+                "name": "\"timestamp\"",
+                "type": "string"
+              },
+              "type": "property"
+            },
+            "orderByDirection": "DESC"
+          },
+          "table": "stats"
+        }
+      ],
+      "title": "Packet size",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "Average packet size",
+                "path": "stats.decoder.avg_pkt_size"
+              },
+              {
+                "alias": "Maximum packet size",
+                "path": "stats.decoder.max_pkt_size"
+              }
+            ],
+            "source": "data"
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P352550935005935F"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "dataset": "postgres",
+          "editorMode": "builder",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT data FROM stats ORDER BY \"timestamp\" DESC LIMIT 100 ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "data",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 100,
+            "orderBy": {
+              "property": {
+                "name": "\"timestamp\"",
+                "type": "string"
+              },
+              "type": "property"
+            },
+            "orderByDirection": "DESC"
+          },
+          "table": "stats"
+        }
+      ],
+      "title": "Total traffic captured",
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "other",
+                "targetField": "data"
+              }
+            ],
+            "fields": {}
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "bytes",
+                "path": "stats.decoder.bytes"
+              }
+            ],
+            "source": "data"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P352550935005935F"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "dataset": "postgres",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT to_timestamp(\"timestamp\" / 1000000), data FROM stats ORDER BY \"timestamp\" DESC LIMIT 100;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Decoder issues",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "afpacket.trunc_pkt",
+                "path": "stats.decoder.event.afpacket.trunc_pkt"
+              },
+              {
+                "alias": "ipv4.pkt_too_small",
+                "path": "stats.decoder.event.ipv4.pkt_too_small"
+              },
+              {
+                "alias": "ipv4.hlen_too_small",
+                "path": "stats.decoder.event.ipv4.hlen_too_small"
+              },
+              {
+                "alias": "ipv4.iplen_smaller_than_hlen",
+                "path": "stats.decoder.event.ipv4.iplen_smaller_than_hlen"
+              },
+              {
+                "alias": "ipv4.trunc_pkt",
+                "path": "stats.decoder.event.ipv4.trunc_pkt"
+              },
+              {
+                "alias": "ipv4.opt_invalid",
+                "path": "stats.decoder.event.ipv4.opt_invalid"
+              },
+              {
+                "alias": "ipv4.opt_invalid_len",
+                "path": "stats.decoder.event.ipv4.opt_invalid_len"
+              },
+              {
+                "alias": "ipv4.opt_malformed",
+                "path": "stats.decoder.event.ipv4.opt_malformed"
+              },
+              {
+                "alias": "ipv4.opt_pad_required",
+                "path": "stats.decoder.event.ipv4.opt_pad_required"
+              },
+              {
+                "alias": "ipv4.opt_eol_required",
+                "path": "stats.decoder.event.ipv4.opt_eol_required"
+              },
+              {
+                "alias": "ipv4.opt_duplicate",
+                "path": "stats.decoder.event.ipv4.opt_duplicate"
+              },
+              {
+                "alias": "ipv4.opt_unknown",
+                "path": "stats.decoder.event.ipv4.opt_unknown"
+              },
+              {
+                "alias": "ipv4.wrong_ip_version",
+                "path": "stats.decoder.event.ipv4.wrong_ip_version"
+              },
+              {
+                "alias": "ipv4.icmpv6",
+                "path": "stats.decoder.event.ipv4.icmpv6"
+              },
+              {
+                "alias": "ipv4.frag_pkt_too_large",
+                "path": "stats.decoder.event.ipv4.frag_pkt_too_large"
+              },
+              {
+                "alias": "ipv4.frag_overlap",
+                "path": "stats.decoder.event.ipv4.frag_overlap"
+              },
+              {
+                "alias": "ipv4.frag_ignored",
+                "path": "stats.decoder.event.ipv4.frag_ignored"
+              },
+              {
+                "alias": "icmpv4.pkt_too_small",
+                "path": "stats.decoder.event.icmpv4.pkt_too_small"
+              },
+              {
+                "alias": "icmpv4.unknown_type",
+                "path": "stats.decoder.event.icmpv4.unknown_type"
+              },
+              {
+                "alias": "icmpv4.unknown_code",
+                "path": "stats.decoder.event.icmpv4.unknown_code"
+              },
+              {
+                "alias": "icmpv4.ipv4_trunc_pkt",
+                "path": "stats.decoder.event.icmpv4.ipv4_trunc_pkt"
+              },
+              {
+                "alias": "icmpv4.ipv4_uknown_ver",
+                "path": "stats.decoder.event.icmpv4.ipv4_uknown_ver"
+              },
+              {
+                "alias": "icmpv6.unknown_type",
+                "path": "stats.decoder.event.icmpv6.unknown_type"
+              },
+              {
+                "alias": "icmpv6.unknown_code",
+                "path": "stats.decoder.event.icmpv6.unknown_code"
+              },
+              {
+                "alias": "icmpv6.pkt_too_small",
+                "path": "stats.decoder.event.icmpv6.pkt_too_small"
+              },
+              {
+                "alias": "icmpv6.ipv6_unknown_version",
+                "path": "stats.decoder.event.icmpv6.ipv6_unknown_version"
+              },
+              {
+                "alias": "icmpv6.ipv6_trunc_pkt",
+                "path": "stats.decoder.event.icmpv6.ipv6_trunc_pkt"
+              },
+              {
+                "alias": "icmpv6.mld_message_with_invalid_hl",
+                "path": "stats.decoder.event.icmpv6.mld_message_with_invalid_hl"
+              },
+              {
+                "alias": "icmpv6.unassigned_type",
+                "path": "stats.decoder.event.icmpv6.unassigned_type"
+              },
+              {
+                "alias": "icmpv6.experimental_type",
+                "path": "stats.decoder.event.icmpv6.experimental_type"
+              },
+              {
+                "alias": "ipv6.pkt_too_small",
+                "path": "stats.decoder.event.ipv6.pkt_too_small"
+              },
+              {
+                "alias": "ipv6.trunc_pkt",
+                "path": "stats.decoder.event.ipv6.trunc_pkt"
+              },
+              {
+                "alias": "ipv6.wrong_ip_version",
+                "path": "stats.decoder.event.ipv6.wrong_ip_version"
+              },
+              {
+                "alias": "ipv6.zero_len_padn",
+                "path": "stats.decoder.event.ipv6.zero_len_padn"
+              },
+              {
+                "alias": "ipv6.data_after_none_header",
+                "path": "stats.decoder.event.ipv6.data_after_none_header"
+              },
+              {
+                "alias": "ipv6.unknown_next_header",
+                "path": "stats.decoder.event.ipv6.unknown_next_header"
+              },
+              {
+                "alias": "ipv6.icmpv4",
+                "path": "stats.decoder.event.ipv6.icmpv4"
+              },
+              {
+                "alias": "ipv6.frag_pkt_too_large",
+                "path": "stats.decoder.event.ipv6.frag_pkt_too_large"
+              },
+              {
+                "alias": "ipv6.frag_overlap",
+                "path": "stats.decoder.event.ipv6.frag_overlap"
+              },
+              {
+                "alias": "ipv6.frag_invalid_length",
+                "path": "stats.decoder.event.ipv6.frag_invalid_length"
+              },
+              {
+                "alias": "ipv6.frag_ignored",
+                "path": "stats.decoder.event.ipv6.frag_ignored"
+              },
+              {
+                "alias": "tcp.pkt_too_small",
+                "path": "stats.decoder.event.tcp.pkt_too_small"
+              },
+              {
+                "alias": "tcp.hlen_too_small",
+                "path": "stats.decoder.event.tcp.hlen_too_small"
+              },
+              {
+                "alias": "tcp.invalid_optlen",
+                "path": "stats.decoder.event.tcp.invalid_optlen"
+              },
+              {
+                "alias": "tcp.opt_invalid_len",
+                "path": "stats.decoder.event.tcp.opt_invalid_len"
+              },
+              {
+                "alias": "tcp.opt_duplicate",
+                "path": "stats.decoder.event.tcp.opt_duplicate"
+              },
+              {
+                "alias": "udp.pkt_too_small",
+                "path": "stats.decoder.event.udp.pkt_too_small"
+              },
+              {
+                "alias": "udp.hlen_too_small",
+                "path": "stats.decoder.event.udp.hlen_too_small"
+              },
+              {
+                "alias": "udp.hlen_invalid",
+                "path": "stats.decoder.event.udp.hlen_invalid"
+              },
+              {
+                "alias": "udp.len_invalid",
+                "path": "stats.decoder.event.udp.len_invalid"
+              }
+            ],
+            "source": "data"
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P352550935005935F"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "dataset": "postgres",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT to_timestamp(\"timestamp\" / 1000000), data FROM stats ORDER BY \"timestamp\" DESC LIMIT 100;",
+          "refId": "A",
+          "sql": {
+            "columns": [],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 100,
+            "orderBy": {
+              "property": {
+                "name": "\"timestamp\"",
+                "type": "string"
+              },
+              "type": "property"
+            },
+            "orderByDirection": "DESC"
+          },
+          "table": "stats"
+        }
+      ],
+      "title": "Protocols",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "HTTP",
+                "path": "stats.app_layer.flow.http"
+              },
+              {
+                "alias": "FTP",
+                "path": "stats.app_layer.flow.ftp"
+              },
+              {
+                "alias": "SMTP",
+                "path": "stats.app_layer.flow.smtp"
+              },
+              {
+                "alias": "TLS",
+                "path": "stats.app_layer.flow.tls"
+              },
+              {
+                "alias": "SSH",
+                "path": "stats.app_layer.flow.ssh"
+              },
+              {
+                "alias": "IMAP",
+                "path": "stats.app_layer.flow.imap"
+              },
+              {
+                "alias": "SMB",
+                "path": "stats.app_layer.flow.smb"
+              },
+              {
+                "alias": "DNS TCP",
+                "path": "stats.app_layer.flow.dns_tcp"
+              },
+              {
+                "alias": "MODBUS",
+                "path": "stats.app_layer.flow.modbus"
+              },
+              {
+                "alias": "ENIP TCP",
+                "path": "stats.app_layer.flow.enip_tcp"
+              },
+              {
+                "alias": "DNP3",
+                "path": "stats.app_layer.flow.dnp3"
+              },
+              {
+                "alias": "NFS TCP",
+                "path": "stats.app_layer.flow.nfs_tcp"
+              },
+              {
+                "alias": "NTP",
+                "path": "stats.app_layer.flow.ntp"
+              },
+              {
+                "alias": "FTP",
+                "path": "stats.app_layer.flow.ftp-data"
+              },
+              {
+                "alias": "TFTP",
+                "path": "stats.app_layer.flow.tftp"
+              },
+              {
+                "alias": "IKE",
+                "path": "stats.app_layer.flow.ike"
+              },
+              {
+                "alias": "KRB5 TCP",
+                "path": "stats.app_layer.flow.krb5_tcp"
+              },
+              {
+                "alias": "QUIC",
+                "path": "stats.app_layer.flow.quic"
+              },
+              {
+                "alias": "DHCP",
+                "path": "stats.app_layer.flow.dhcp"
+              },
+              {
+                "alias": "SIP TCP",
+                "path": "stats.app_layer.flow.sip_tcp"
+              },
+              {
+                "alias": "RFB",
+                "path": "stats.app_layer.flow.rfb"
+              },
+              {
+                "alias": "MQTT",
+                "path": "stats.app_layer.flow.mqtt"
+              },
+              {
+                "alias": "PGSQL",
+                "path": "stats.app_layer.flow.pgsql"
+              },
+              {
+                "alias": "TELNET",
+                "path": "stats.app_layer.flow.telnet"
+              },
+              {
+                "alias": "WEBSOCKET",
+                "path": "stats.app_layer.flow.websocket"
+              },
+              {
+                "alias": "LDAP TCP",
+                "path": "stats.app_layer.flow.ldap_tcp"
+              },
+              {
+                "alias": "DNS HTTP2",
+                "path": "stats.app_layer.flow.doh2"
+              },
+              {
+                "alias": "RDP",
+                "path": "stats.app_layer.flow.rdp"
+              },
+              {
+                "alias": "HTTP2",
+                "path": "stats.app_layer.flow.http2"
+              },
+              {
+                "alias": "POP3",
+                "path": "stats.app_layer.flow.pop3"
+              },
+              {
+                "alias": "mDNS",
+                "path": "stats.app_layer.flow.mdns"
+              },
+              {
+                "alias": "SNMP",
+                "path": "stats.app_layer.flow.snmp"
+              },
+              {
+                "alias": "DNS UDP",
+                "path": "stats.app_layer.flow.dns_udp"
+              },
+              {
+                "alias": "ENIP UDP",
+                "path": "stats.app_layer.flow.enip_udp"
+              },
+              {
+                "alias": "NFS UDP",
+                "path": "stats.app_layer.flow.nfs_udp"
+              },
+              {
+                "alias": "KRB5 UDP",
+                "path": "stats.app_layer.flow.krb5_udp"
+              },
+              {
+                "alias": "SIP UDP",
+                "path": "stats.app_layer.flow.sip_udp"
+              },
+              {
+                "alias": "LDAP UDP",
+                "path": "stats.app_layer.flow.ldap_udp"
+              }
+            ],
+            "source": "data"
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P352550935005935F"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 19
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "dataset": "postgres",
+          "editorMode": "builder",
+          "format": "table",
+          "rawSql": "SELECT data FROM stats ORDER BY \"timestamp\" DESC LIMIT 100 ",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [
+                  {
+                    "name": "data",
+                    "type": "functionParameter"
+                  }
+                ],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 100,
+            "orderBy": {
+              "property": {
+                "name": "\"timestamp\"",
+                "type": "string"
+              },
+              "type": "property"
+            },
+            "orderByDirection": "DESC"
+          },
+          "table": "stats"
+        }
+      ],
+      "title": "Alerts count",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "Alert",
+                "path": "stats.detect.alert"
+              }
+            ],
+            "source": "data"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P352550935005935F"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 19
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "dataset": "postgres",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT to_timestamp(\"timestamp\" / 1000000), data FROM stats ORDER BY \"timestamp\" DESC LIMIT 100;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Flows",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "Total",
+                "path": "stats.flow.total"
+              },
+              {
+                "alias": "TCP",
+                "path": "stats.flow.tcp"
+              },
+              {
+                "alias": "UDP",
+                "path": "stats.flow.udp"
+              },
+              {
+                "alias": "ICMPv4",
+                "path": "stats.flow.icmpv4"
+              },
+              {
+                "alias": "ICMPv6",
+                "path": "stats.flow.icmpv6"
+              }
+            ],
+            "source": "data"
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "P352550935005935F"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 19
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.4.0",
+      "targets": [
+        {
+          "dataset": "postgres",
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT to_timestamp(\"timestamp\" / 1000000), data FROM stats ORDER BY \"timestamp\" DESC LIMIT 100;",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "TCP sessions",
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "delimiter": ",",
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "Sessions",
+                "path": "stats.tcp.sessions"
+              },
+              {
+                "alias": "Active sessions",
+                "path": "stats.tcp.active_sessions"
+              }
+            ],
+            "source": "data"
+          }
+        }
+      ],
+      "type": "timeseries"
+    }
+  ],
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "2026-02-27T22:55:10.000Z",
+    "to": "2026-02-27T23:08:22.000Z"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Home",
+  "uid": "2e22d2be-2521-4d0d-ae6d-90de4606a4c8",
+  "version": 16,
+  "weekStart": ""
+}

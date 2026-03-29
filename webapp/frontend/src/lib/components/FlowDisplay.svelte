@@ -121,7 +121,7 @@
                     }
                     flowAppProto[e.event_type].push(JSON.parse(new TextDecoder().decode(Uint8Array.from(e.data)))[e.event_type]);
                 }
-                else {
+                else if (e.event_type === "fileinfo") {
                     if (!fileinfos[json.flow.app_proto]) {
                         fileinfos[json.flow.app_proto] = [];
                     }
@@ -138,6 +138,10 @@
                         sha256: d.sha256,
                         tx_id: d.tx_id
                     });
+                }
+                else if (e.event_type === "anomaly") {
+                    //const d = JSON.parse(new TextDecoder().decode(Uint8Array.from(e.data))).anomaly;
+                    //console.log(d);
                 }
             }
         }
@@ -204,7 +208,7 @@
 {#await flowData}
     Loading...
 {:then flowData}
-    <div class="vstack gap-3">
+    <div class="vstack gap-2">
         <!-- Flow card -->
         <div class="hstack gap-2 align-items-stretch">
             <div class="card p-2 border-secondary">
@@ -234,7 +238,7 @@
         <!-- Alerts -->
         {#if flowData.alerts}
             <div class="vstack gap-3">
-                {#each flowData.alerts as a}
+                {#each flowData.alerts as a, index (index)}
                     {@const alert_data = JSON.parse(new TextDecoder().decode(Uint8Array.from(a.data))).alert}
                     {#if alert_data.signature !== "tag" && alert_data.signature !== ""}
                         <div class="card p-2 border-{a.color}">{alert_data.signature}</div>
@@ -246,7 +250,7 @@
         <!-- Anomalies -->
         {#if flowData.anomalies}
             <div class="vstack gap-3">
-                {#each flowData.anomalies as anomaly}
+                {#each flowData.anomalies as anomaly, index (index)}
                     <div class="card p-2 border-warning">Dissection anomaly: {JSON.stringify(anomaly)}</div>
                 {/each}
             </div>
@@ -274,13 +278,13 @@
                     <div id="display-app" class="accordion-collapse collapse show">
                         <div class="accordion-body">
                             <div class="vstack gap-3">
-                                {#each Object.entries(flowData.flowAppProto) as [app_proto, flow_app_proto] }
+                                {#each Object.entries(flowData.flowAppProto) as  [app_proto, flow_app_proto] (app_proto)}
                                     {#if app_proto === "http" || app_proto === "http2"}
                                         <HttpFlow appDataActiveView={appDataActiveView} destPort={flowData.flow.dest_port} fileinfos={flowData.fileinfos[app_proto]} app_proto={app_proto} flow_app_proto={flow_app_proto} />
                                     {:else if app_proto === "websocket"}
                                         <WebsocketFlow appDataActiveView={appDataActiveView} fileinfos={flowData.fileinfos[app_proto]} flow_app_proto={flow_app_proto} />
                                     {:else}
-                                        {#each Object.entries(flow_app_proto as any) as [tx_id, data]}
+                                        {#each flow_app_proto as data, index (index)}
                                             <div>
                                                 <span>{JSON.stringify(data, null, 4)}</span>
                                             </div>
@@ -315,12 +319,12 @@
                         </div>
                         <div id="display-raw" class="accordion-collapse collapse show">
                             <div class="accordion-body vstack">
-                                {#each Object.entries(rawFlowData.raw) as [i, chunk]}
+                                {#each rawFlowData.raw as chunk, index (index)}
                                     {@const byteArray = Uint8Array.from(chunk.blob)}
                                     {#if rawDataActiveView === "utf8"}
                                         <pre class="rounded p-2 {chunk.server_to_client === 0 ? "bg-danger" : ""}{chunk.server_to_client === 1 ? "bg-success" : ""}">{new TextDecoder().decode(byteArray)}</pre>
                                     {:else if rawDataActiveView === "hex"}
-                                        <pre class="rounded p-2 {chunk.server_to_client === 0 ? "bg-danger" : ""}{chunk.server_to_client === 1 ? "bg-success" : ""}"><HexDumpViewer sha256={i} blob={byteArray} /></pre>
+                                        <pre class="rounded p-2 {chunk.server_to_client === 0 ? "bg-danger" : ""}{chunk.server_to_client === 1 ? "bg-success" : ""}"><HexDumpViewer sha256={index} blob={byteArray} /></pre>
                                     {/if}
                                 {/each}
                             </div>

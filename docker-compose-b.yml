@@ -38,13 +38,21 @@ services:
       - postgres
 
   postgres:
-    image: postgres:alpine
+    image: postgres:18-alpine3.23
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
+      
+  grafana:
+    build: ./grafana
+    restart: always
+    ports:
+      - "8001:3000"
+    depends_on:
+      - postgres
 
 volumes:
   pgdata:

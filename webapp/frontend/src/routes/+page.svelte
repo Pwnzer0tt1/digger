@@ -3,7 +3,6 @@
 	import ServicesManager from '$lib/components/ServicesManager.svelte';
 	import Settings from '$lib/components/Settings.svelte';
 	import SideBar from '$lib/components/SideBar.svelte';
-	import Stats from '$lib/components/Stats/Stats.svelte';
 	import TickProgressBar from '$lib/components/TickProgressBar.svelte';
 	import WelcomePanel from '$lib/components/WelcomePanel.svelte';
 	import type { Tag } from '$lib/schema';
@@ -118,8 +117,6 @@
                 <ServicesManager />
             {:else if selectedPanel.view === "Settings"}
                 <Settings />
-            {:else if selectedPanel.view === "Stats"}
-                <Stats />
             {:else}
                 {#if selectedFlow.flow}
                     <!-- Flow display -->
@@ -139,7 +136,6 @@
         {/if}
         <div class="btn-group" role="group" aria-label="Basic example">
             <button onclick={() => selectedPanel.view = "Settings"} type="button" class="btn btn-primary" title="Settings" aria-label="Settings"><i class="bi bi-gear-fill"></i></button>
-            <button onclick={() => selectedPanel.view = "Stats"} type="button" class="btn btn-primary" title="Statistics" aria-label="Statistics"><i class="bi bi-activity"></i></button>
         </div>
     </div>
 </div>

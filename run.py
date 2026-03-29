@@ -487,17 +487,17 @@ def create_parser():
         add_help=False,  # Disable default -h/--help
         epilog=f"""
 {Colors.BOLD}Examples:{Colors.END}
-  {Colors.CYAN}./start.py start --mode-a{Colors.END}                         # Start Digger in mode A
-  {Colors.CYAN}./start.py start --mode-c --target-ip 10.60.2.1 {Colors.END}  # Start mode C with target IP
-  {Colors.CYAN}./start.py stop{Colors.END}                                   # Stop running containers
-  {Colors.CYAN}./start.py clear{Colors.END}                                  # Clear output and stop containers
-  {Colors.CYAN}./start.py clear --all{Colors.END}                            # Clear everything
-  {Colors.CYAN}./start.py clear --suricata{Colors.END}                       # Clear only Suricata output
-  {Colors.CYAN}./start.py status{Colors.END}                                 # Show container status
-  {Colors.CYAN}./start.py logs{Colors.END}                                   # Follow all container logs
-  {Colors.CYAN}./start.py logs --tail 100{Colors.END}                        # Last 100 logs of all containers
-  {Colors.CYAN}./start.py logs webapp --tail 50{Colors.END}                  # Last 50 logs of specific service
-  {Colors.CYAN}./start.py help{Colors.END}                                   # Show this help message
+  {Colors.CYAN}./run.py start --mode-a{Colors.END}                         # Start Digger in mode A
+  {Colors.CYAN}./run.py start --mode-c --target-ip 10.60.2.1 {Colors.END}  # Start mode C with target IP
+  {Colors.CYAN}./run.py stop{Colors.END}                                   # Stop running containers
+  {Colors.CYAN}./run.py clear{Colors.END}                                  # Clear output and stop containers
+  {Colors.CYAN}./run.py clear --all{Colors.END}                            # Clear everything
+  {Colors.CYAN}./run.py clear --suricata{Colors.END}                       # Clear only Suricata output
+  {Colors.CYAN}./run.py status{Colors.END}                                 # Show container status
+  {Colors.CYAN}./run.py logs{Colors.END}                                   # Follow all container logs
+  {Colors.CYAN}./run.py logs --tail 100{Colors.END}                        # Last 100 logs of all containers
+  {Colors.CYAN}./run.py logs webapp --tail 50{Colors.END}                  # Last 50 logs of specific service
+  {Colors.CYAN}./run.py help{Colors.END}                                   # Show this help message
         """,
     )
 

@@ -6,15 +6,16 @@
 // This file has been modified from the original version.
 // Licensed under GPL-3.0
 
-mod database;
 mod ffi;
-mod schema;
-mod models;
 
+use database::{models, schema, Database, OutputWriter};
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::os::raw::{c_int, c_void};
+use std::ffi::{c_char, c_int, c_void};
 use std::sync::mpsc;
+
+use diesel::RunQueryDsl;
+use suricata_sys::sys::{SC_API_VERSION, SC_PACKAGE_VERSION, SCPlugin};
 
 // Default configuration values.
 const DEFAULT_DATABASE_URI: &str = "postgresql://postgres@postgres:5432/postgres";
@@ -43,6 +44,18 @@ struct Filedata {
     sha256: [u8; 32],
 }
 
+impl OutputWriter for Filedata {
+    fn write_output(&self, conn: &mut diesel::PgConnection) -> diesel::QueryResult<usize> {
+        diesel::insert_into(schema::filedata::table)
+            .values(models::NewFiledata {
+                sha256: self.sha256.to_vec(),
+                blob: &self.blob
+            })
+            .on_conflict_do_nothing()
+            .execute(conn)
+    }
+}
+
 struct Context {
     tx: mpsc::SyncSender<Filedata>,
     count: usize,
@@ -62,7 +75,7 @@ extern "C" fn filedata_log(
     _dir: u8,
 ) -> c_int {
     // Handle FFI arguments
-    let context = unsafe { &mut *(thread_data as *mut Context) };
+    let context = unsafe { &mut *thread_data.cast::<Context>() };
     let ff = unsafe { &mut *(ff) };
     let data_slice = unsafe { std::slice::from_raw_parts(data, data_len as usize) };
 
@@ -102,7 +115,7 @@ extern "C" fn filedata_thread_init(
 
     // Create thread context
     let (tx, rx) = mpsc::sync_channel(config.buffer);
-    let mut database_client = match database::Database::new(config.db_url, rx) {
+    let mut database_client = match Database::new(config.db_url, rx) {
         Ok(client) => client,
         Err(err) => {
             log::error!("Failed to initialize database client: {err:?}");
@@ -161,15 +174,15 @@ extern "C" fn plugin_init() {
 
 /// Plugin entrypoint, registers [`plugin_init`] function in Suricata
 #[no_mangle]
-extern "C" fn SCPluginRegister() -> *const ffi::SCPlugin {
-    let plugin = ffi::SCPlugin {
-        version: ffi::SC_API_VERSION,
-        suricata_version: ffi::SC_PACKAGE_VERSION.as_ptr(),
+extern "C" fn SCPluginRegister() -> *const SCPlugin {
+    let plugin = SCPlugin {
+        version: SC_API_VERSION,
+        suricata_version: SC_PACKAGE_VERSION.as_ptr() as *const c_char,
         name: c"Filedata PostgreSQL Output".as_ptr(),
         plugin_version: c"0.1.0".as_ptr(),
         license: c"GPL-3.0".as_ptr(),
         author: c"Pwnzer0tt1".as_ptr(),
-        Init: plugin_init,
+        Init: Some(plugin_init),
     };
     Box::into_raw(Box::new(plugin))
 }

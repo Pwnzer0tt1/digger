@@ -155,22 +155,22 @@
 <svelte:document onkeydown={shiftChange} onkeyup={shiftChange} />
 
 <div class="d-flex gap-3 text-light rounded" style="background-color: #353535;">
-    <div class="rounded" style="background-color: #545454;">
-        {#each offset as o}
+    <div class="rounded-start" style="background-color: #545454;">
+        {#each offset as o, index (index)}
             <div class="px-2" style="height: 24px;">{o}</div>
         {/each}
     </div>
     <div style="flex: 1 0 40%;" oncopy={copyBytes}>
         <div class="d-flex align-content-start flex-wrap">
-            {#each Object.entries(hex) as [i, h]}
-                <div data-index={i} onclick={selectCell} onmouseover={overCell} class="{sha256}-hex hex-cell text-center" role="none" onfocus={(e) => {}}>{h}</div>
+            {#each hex as h, index (index)}
+                <div data-index={index} onclick={selectCell} onmouseover={overCell} class="{sha256}-hex hex-cell text-center" role="none" onfocus={(e) => {}}>{h}</div>
             {/each}
         </div>
     </div>
     <div style="flex: 1 0 40%;" oncopy={copyBytes}>
         <div class="d-flex align-content-start flex-wrap">
-            {#each Object.entries(text) as [i, t]}
-                <div data-index={i} onclick={selectCell} onmouseover={overCell} class="{sha256}-text text-cell text-center" role="none" onfocus={(e) => {}}>{t}</div>
+            {#each text as t, index (index)}
+                <div data-index={index} onclick={selectCell} onmouseover={overCell} class="{sha256}-text text-cell text-center" role="none" onfocus={(e) => {}}>{t}</div>
             {/each}
         </div>
     </div>

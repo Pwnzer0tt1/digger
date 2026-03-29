@@ -39,7 +39,6 @@
 </script>
 
 <div id="http-replay-editor" class="rounded-bottom">
-<!--
 #!/usr/bin/env python3
 # Filename: replay-{ serviceName }-{ flowId }.py
 import json
@@ -80,7 +79,7 @@ else:
 s = requests.Session()
 s.headers["User-Agent"] = "{userAgent}"
 
-{#each data as req}
+{#each data as req, index (index)}
 # 
 
 r = s.{req.http_method.toLowerCase()}(
@@ -89,7 +88,7 @@ r = s.{req.http_method.toLowerCase()}(
     data={req.rq_content},
     {/if}
     headers=&#123;
-        {#each req.request_headers as header}
+        {#each req.request_headers as header, index (index)}
             {#if !["connection", "content-length", "host", "user-agent"].includes(header.name.toLowerCase())}
         "{header.name}": "{header.value}",
             {/if}
@@ -102,5 +101,4 @@ if r.status_code != {req.status}:
     logging.error(f"Request returned wrong status code &#123;r.status_code&#125;, expected {req.status}")
 print(r.text, flush=True)
 {/each}
--->
 </div>

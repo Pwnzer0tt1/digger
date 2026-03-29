@@ -98,7 +98,7 @@
             {/each}
             <button onclick={addIpPort} class="btn btn-success" title="Add IP:port" aria-label="Add IP:port"><i class="bi bi-plus-lg"></i></button>
         </div>
-        <button onclick={addService} class="btn btn-primary w-100">Add Service</button>
+        <button onclick={addService} class="btn btn-primary w-100">Save Service</button>
 
         <hr>
 

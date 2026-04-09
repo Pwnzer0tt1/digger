@@ -5,6 +5,7 @@ use std::ffi::{CStr, c_char, c_int, c_uint, c_void};
 
 
 #[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct Packet {
     _opaque: [u8; 0]
 }
@@ -12,7 +13,7 @@ pub struct Packet {
 pub const FLOW_PKT_TOCLIENT: u8 = 0x2;
 
 pub type LoggerId = c_uint;
-pub const LOGGER_USER: LoggerId = 28;
+pub const LOGGER_USER: LoggerId = 26;
 pub type PacketLogger = extern "C" fn(
     *mut *mut c_void, // ThreadVars *
     thread_data: *mut *mut c_void,

@@ -37,7 +37,7 @@ COPY database/ /src/database/
 COPY suricata-eve-postgres-output/ /src/suricata-eve-postgres-output/
 COPY suricata-filedata-postgres-output/ /src/suricata-filedata-postgres-output/
 COPY suricata-stream-postgres-output/ /src/suricata-stream-postgres-output/
-#COPY suricata-packet-postgres-output/ /src/suricata-packet-postgres-output/
+COPY suricata-packet-postgres-output/ /src/suricata-packet-postgres-output/
 
 RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build --release
 
@@ -45,7 +45,7 @@ RUN RUSTFLAGS="-C target-feature=-crt-static" cargo build --release
 # Last stage
 FROM alpine:3.23
 RUN apk update
-RUN apk add --no-cache netcat-openbsd libpq-dev lua5.4-sql-postgres
+RUN apk add --no-cache netcat-openbsd libpq-dev
 RUN apk add --no-cache suricata --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 
 COPY . /suricata

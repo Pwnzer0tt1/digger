@@ -11,7 +11,7 @@ pub struct SCEveFileType {
     pub name: *const c_char,
     pub Init: extern "C" fn(*const c_void, bool, *mut *mut c_void) -> c_int,
     pub ThreadInit: extern "C" fn(*const c_void, c_int, *mut *mut c_void) -> c_int,
-    pub Write: extern "C" fn(*const c_char, c_int, *const c_void, *const c_void) -> c_int,
+    pub Write: extern "C" fn(*const c_char, c_int, *const c_void, *mut c_void) -> c_int,
     pub ThreadDeinit: extern "C" fn(*const c_void, thread_data: *mut c_void),
     pub Deinit: extern "C" fn(*const c_void),
     pub pad: [usize; 2], // Suricata internal list management pointers.

@@ -4,9 +4,13 @@
 #include "decode.h"
 #include "flow.h"
 #include <stdint.h>
+#include <stdio.h>
 
 
 uint64_t get_flow_id(const Packet *p) {
+    if (p->flow == NULL) {
+        return 0;
+    }
     return FlowGetId(p->flow);
 }
 

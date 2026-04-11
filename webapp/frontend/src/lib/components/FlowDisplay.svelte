@@ -222,15 +222,15 @@
                 <p class="my-0"><i class="bi bi-arrow-left"></i> {flowData.flow.data.flow.pkts_toclient} packets ({flowData.flow.data.flow.bytes_toclient} bytes)</p>
             </div>
             <div class="d-flex align-items-stretch">
-                <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
-                    <button onclick={() => ctfConfig.hideSideBar = !ctfConfig.hideSideBar} class="btn btn-outline-primary" aria-label="Fullscreen">
+                <div class="btn-group-vertical gap-2" role="group" aria-label="Vertical button group">
+                    <button onclick={() => ctfConfig.hideSideBar = !ctfConfig.hideSideBar} class="btn btn-primary rounded" aria-label="Fullscreen">
                         {#if ctfConfig.hideSideBar}
                             <i class="bi bi-fullscreen-exit"></i>
                         {:else}
                             <i class="bi bi-fullscreen"></i>
                         {/if}
                     </button>
-                    <a href="/api/flow/{flowData.flow.id}/pcap" download="{flowData.flow.id}.lz4" class="btn btn-success" aria-label="Download pcap"><i class="bi bi-file-earmark-arrow-down-fill"></i></a>
+                    <a href="/api/flow/{flowData.flow.id}/pcap" download="{flowData.flow.id}.lz4" class="btn btn-success rounded" aria-label="Download pcap"><i class="bi bi-file-earmark-arrow-down-fill"></i></a>
                 </div>
             </div>
         </div>

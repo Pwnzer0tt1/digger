@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Tag } from "$lib/schema";
-	import { ctfConfig, flows, flowsFilters, selectedPanel, tickInfo } from "$lib/state.svelte";
+	import { ctfConfig, flows, flowsFilters, pinnedFlows, selectedPanel, tickInfo } from "$lib/state.svelte";
 	import FlowCard from "./FlowCard.svelte";
 
     let { tags, appProto }: {
@@ -192,17 +192,25 @@
             </div>
         {:else}
             <div class="overflow-y-scroll">
-                <div class="list-group list-group-flush m-1 rounded">
+                <div class="list-group list-group-flush m-1 rounded gap-1">
+                    {#if Object.keys(pinnedFlows.flows).length > 0}
+                        <p class="list-group-item fw-bold mb-0 text-center text-bg-secondary rounded">Pinned flows</p>
+                        {#each Object.entries(pinnedFlows.flows) as [flow_id, flow] (flow_id)}
+                            <FlowCard index={-1} flow={flow} tags={tags} />
+                        {/each}
+                    {/if}
                     {#each flows.flows as flow, index (index)}
                         {#if tickInfo.tickNumber > 0}
                             {@const startTs = Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000)}
                             {@const tick = Math.floor((Number(flow.ts_start) / 1000000 - startTs) / ctfConfig.config.tick_length)}
                             {@const lastTick = index === 0 ? -1 : Math.floor((Number(flows.flows[index - 1].ts_start) / 1000000 - startTs) / ctfConfig.config.tick_length)}
                             {#if tick !== lastTick}
-                                <p class="list-group-item fw-bold mb-0 text-center text-bg-secondary">Tick {tick}</p>
+                                <p class="list-group-item fw-bold mb-0 text-center text-bg-secondary rounded">Tick {tick}</p>
                             {/if}
                         {/if}
-                        <FlowCard index={Number(index)} flow={flow} tags={tags} />
+                        {#if pinnedFlows.flows[flow.id] === undefined}
+                            <FlowCard index={Number(index)} flow={flow} tags={tags} />
+                        {/if}
                     {/each}
                 </div>
             </div>

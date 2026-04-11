@@ -82,7 +82,7 @@ s.headers["User-Agent"] = "{userAgent}"
 {#each data as req, index (index)}
 # 
 
-r = s.{req.http_method.toLowerCase()}(
+r = s.{(req.http_method || "").toLowerCase()}(
     f"http://&#123;HOST&#125;:{req.http_port || "80"}{req.url}",
     {#if req.http_method === "POST"}
     data={req.rq_content},

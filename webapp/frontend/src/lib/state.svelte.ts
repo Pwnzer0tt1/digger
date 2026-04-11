@@ -47,3 +47,11 @@ export const flows: {
 } = $state({
     flows: []
 });
+
+export const pinnedFlows: {
+    flows: {
+        [key: string]: Flow
+    }
+} = $state({
+    flows: {}
+});

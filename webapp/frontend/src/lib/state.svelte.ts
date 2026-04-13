@@ -21,7 +21,7 @@ export const tickInfo: {
     tickNumber: 0
 });
 
-export const flowsFilters: FlowsListFilters = $state({ ts_to: String(1e16), tags_require: [], tags_deny: [] });
+export const flowsFilters: FlowsListFilters = $state({ tags_require: [], tags_deny: [] });
 
 export const ctfConfig: {
     config: CtfConfig,

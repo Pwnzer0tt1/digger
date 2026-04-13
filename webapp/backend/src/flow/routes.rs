@@ -2,7 +2,7 @@ use actix_files::NamedFile;
 use actix_web::{get, web, HttpRequest, HttpResponse, Responder, Result};
 use diesel::{prelude::*, r2d2::ConnectionManager, sql_query, sql_types::Text};
 use std::{fs, sync::Mutex};
-use crate::{config::CtfConfig, flow::model::{FlowData, FlowWithAlerts, FlowsFilters, FlowsList, FlowsQuery}, models::{Alert, Event, Flow, FlowTag, RawFlowID, ReadFlowRaw, Tag}, schema};
+use crate::{config::CtfConfig, flow::model::{FlowData, FlowWithAlerts, FlowsFilters, FlowsList, FlowsQuery, TickOp}, models::{Alert, Event, Flow, FlowTag, RawFlowID, ReadFlowRaw, Tag}, schema};
 
 
 pub fn init_routes(cfg: &mut web::ServiceConfig) {
@@ -21,13 +21,63 @@ async fn read_flows(query: web::Query<FlowsQuery>, ctf_config: web::Data<Mutex<C
         }
     };
 
-    let ts_to: i64 = match filters.ts_to {
-        Some(v) => v.parse().unwrap(),
-        None => 10_000_000_000_000_000
-    };
-
     let mut flows_query = schema::flow::table.into_boxed();
-    flows_query = flows_query.filter(schema::flow::ts_start.lt(ts_to));
+    
+    if let Some(tick_op) = filters.tick_op {
+        let min_ts: Option<i64> = match filters.min_ts {
+            Some(v) => Some(v.parse().unwrap()),
+            None => None
+        };
+        let max_ts: Option<i64> = match filters.max_ts {
+            Some(v) => Some(v.parse().unwrap()),
+            None => None
+        };
+        let ts: Option<i64> = match filters.ts {
+            Some(v) => Some(v.parse().unwrap()),
+            None => None
+        };
+        let ctf_config = ctf_config.lock().unwrap();
+        if let (Some(min_ts), Some(max_ts)) = (min_ts, max_ts) {
+            match tick_op {
+                TickOp::BetweenGeLe => {
+                    flows_query = flows_query.filter(schema::flow::ts_start.ge(min_ts).and(schema::flow::ts_start.lt(max_ts + (ctf_config.tick_length * 1_000_000) as i64)));
+                },
+                TickOp::BetweenGeLt => {
+                    flows_query = flows_query.filter(schema::flow::ts_start.ge(min_ts).and(schema::flow::ts_start.lt(max_ts)));
+                },
+                TickOp::BetweenGtLe => {
+                    flows_query = flows_query.filter(schema::flow::ts_start.ge(min_ts + (ctf_config.tick_length * 1_000_000) as i64).and(schema::flow::ts_start.lt(max_ts + (ctf_config.tick_length * 1_000_000) as i64)));
+                },
+                TickOp::BetweenGtLt => {
+                    flows_query = flows_query.filter(schema::flow::ts_start.ge(min_ts + (ctf_config.tick_length * 1_000_000) as i64).and(schema::flow::ts_start.lt(max_ts)));
+                },
+                _ => {}
+            };
+        }
+        if let Some(ts) = ts {
+            match tick_op {
+                TickOp::Eq => {
+                    flows_query = flows_query.filter(schema::flow::ts_start.ge(ts).and(schema::flow::ts_start.lt(ts + (ctf_config.tick_length * 1_000_000) as i64)));
+                },
+                TickOp::Ge => {
+                    flows_query = flows_query.filter(schema::flow::ts_start.ge(ts));
+                },
+                TickOp::Gt => {
+                    flows_query = flows_query.filter(schema::flow::ts_start.ge(ts + (ctf_config.tick_length * 1_000_000) as i64));
+                },
+                TickOp::Le => {
+                    flows_query = flows_query.filter(schema::flow::ts_start.lt(ts + (ctf_config.tick_length * 1_000_000) as i64));
+                },
+                TickOp::Lt => {
+                    flows_query = flows_query.filter(schema::flow::ts_start.lt(ts));
+                },
+                TickOp::Ne => {
+                    flows_query = flows_query.filter(schema::flow::ts_start.lt(ts).or(schema::flow::ts_start.ge(ts + (ctf_config.tick_length * 1_000_000) as i64)));
+                },
+                _ => {}
+            }
+        }
+    }
 
     if let Some(app_proto) = &filters.app_proto {
         flows_query = flows_query.filter(schema::flow::app_proto.eq(app_proto.to_owned()));

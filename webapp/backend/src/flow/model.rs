@@ -17,8 +17,25 @@ pub struct FlowsQuery {
 }
 
 #[derive(Deserialize, Debug)]
+pub enum TickOp {
+    Lt,
+    Le,
+    Gt,
+    Ge,
+    Eq,
+    Ne,
+    BetweenGtLt,
+    BetweenGtLe,
+    BetweenGeLt,
+    BetweenGeLe
+}
+
+#[derive(Deserialize, Debug)]
 pub struct FlowsFilters {
-    pub ts_to: Option<String>,
+    pub tick_op: Option<TickOp>,
+    pub ts: Option<String>,
+    pub min_ts: Option<String>,
+    pub max_ts: Option<String>,
     pub services: Option<Vec<String>>,
     pub app_proto: Option<String>,
     pub search: Option<String>,

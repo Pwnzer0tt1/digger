@@ -25,7 +25,12 @@
     });
 
     let selectedService: string = $state("");
-    let beforeTick: number | undefined = $state(undefined);
+    let tickSearchMode: "Lt" | "Le" | "Gt" | "Ge" | "Eq" | "Ne" | "Between" = $state("Lt");
+    let filterTick: number | undefined = $state(undefined);
+    let betweenGreater: "Gt" | "Ge" = $state("Ge");
+    let betweenLesser: "Lt" | "Le" = $state("Le");
+    let minFilterTick: number | undefined = $state(undefined);
+    let maxFilterTick: number | undefined = $state(undefined);
     let protocol: string = $state("");
     let search: string = $state("");
     let availableTags: string[] = $derived(tags.map(v => v.tag));
@@ -42,12 +47,32 @@
         }
     }
 
-    function changeBeforeTick() {
-        if (beforeTick) {
-            flowsFilters.ts_to = String(Math.floor((beforeTick * ctfConfig.config.tick_length + Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000)) * 1000000));
+    function changeTickFilter() {
+        if (tickSearchMode === "Between") {
+            flowsFilters.ts = undefined;
+            filterTick = undefined;
+            if (minFilterTick && maxFilterTick) {
+                flowsFilters.tick_op = "Between" + betweenGreater + betweenLesser;
+                flowsFilters.min_ts = String(Math.floor((minFilterTick * ctfConfig.config.tick_length + Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000)) * 1000000));
+                flowsFilters.max_ts = String(Math.floor((maxFilterTick * ctfConfig.config.tick_length + Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000)) * 1000000));
+            }
+            else {
+                flowsFilters.min_ts = undefined;
+                flowsFilters.max_ts = undefined;
+            }
         }
         else {
-            flowsFilters.ts_to = undefined;
+            flowsFilters.min_ts = undefined;
+            flowsFilters.max_ts = undefined;
+            minFilterTick = undefined;
+            maxFilterTick = undefined;
+            if (filterTick) {
+                flowsFilters.tick_op = tickSearchMode;
+                flowsFilters.ts = String(Math.floor((filterTick * ctfConfig.config.tick_length + Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000)) * 1000000));
+            }
+            else {
+                flowsFilters.ts = undefined;
+            }
         }
     }
 
@@ -134,8 +159,37 @@
             </button>
             <div class="dropdown-menu p-2" style="width: 25vw;">
                 <div class="input-group flex-nowrap mb-3">
-                    <span class="input-group-text gap-2"><i class="bi bi-clock-fill"></i> Before tick</span>
-                    <input onchange={changeBeforeTick} bind:value={beforeTick} type="number" min="0" class="form-control" placeholder={tickInfo.tickNumber.toString()}>
+                    <span class="input-group-text gap-2"><i class="bi bi-clock-fill"></i></span>
+                    <select onchange={changeTickFilter} bind:value={tickSearchMode} class="form-select" aria-label="Default select example">
+                        <option value="Lt" selected>Before tick</option>
+                        <option value="Le">Before tick or equal</option>
+                        <option value="Gt">After tick</option>
+                        <option value="Ge">After tick or equal</option>
+                        <option value="Eq">Equal to tick</option>
+                        <option value="Ne">Not equal to tick</option>
+                        <option value="Between">Between ticks</option>
+                    </select>
+                    {#if tickSearchMode === "Between"}
+                        <input onchange={changeTickFilter} bind:value={minFilterTick} type="number" min="0" class="form-control" placeholder="0">
+                        <button onclick={() => { if (betweenGreater === "Ge") {betweenGreater = "Gt"} else {betweenGreater = "Ge"} changeTickFilter() }} class="btn border">
+                            {#if betweenGreater === "Gt"}
+                            &lt;
+                            {:else if betweenGreater === "Ge"}
+                            &le;
+                            {/if}
+                        </button>
+                        <span class="input-group-text gap-2">T</span>
+                        <button onclick={() => { if (betweenLesser === "Le") {betweenLesser = "Lt"} else {betweenLesser = "Le"} changeTickFilter() }} class="btn border">
+                            {#if betweenLesser === "Lt"}
+                            &lt;
+                            {:else if betweenLesser === "Le"}
+                            &le;
+                            {/if}
+                        </button>
+                        <input onchange={changeTickFilter} bind:value={maxFilterTick} type="number" min="0" class="form-control" placeholder={tickInfo.tickNumber.toString()}>
+                    {:else}
+                        <input onchange={changeTickFilter} bind:value={filterTick} type="number" min="0" class="form-control" placeholder={tickInfo.tickNumber.toString()}>
+                    {/if}
                 </div>
                 <div class="input-group flex-nowrap mb-3">
                     <span class="input-group-text">Protocol</span>

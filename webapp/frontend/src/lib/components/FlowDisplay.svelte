@@ -12,15 +12,18 @@
     let rawDataActiveView: "utf8" | "hex" = $state("utf8");
 
     const MAGIC_EXT = {
+        'Audio file': 'mp3',
+        'FLAC audio': 'flac',
         'GIF image': 'gif',
         'HTML document': 'html',
         'ISO Media': 'mp4',
         'JPEG image': 'jpg',
+        'Ogg data': 'ogg',
         'PDF document': 'pdf',
         'PNG image': 'png',
+        'RIFF (little-endian) data, WAVE audio': 'wav',
         'SVG Scalable Vector Graphics image': 'svg',
         'VGM Video Game Music': 'vgm',
-        'RIFF (little-endian) data, WAVE audio': 'wav',
         'Web Open Font': 'woff',
         'Zip archive': 'zip'
     };

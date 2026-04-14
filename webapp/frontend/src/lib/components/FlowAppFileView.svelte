@@ -18,7 +18,7 @@
                         <img class="img-fluid" src={URL.createObjectURL(new Blob([fileinfo.bytes]))} alt="">
                     {:else if fileinfo.ext === "mp4"}
                         <video class="object-fit-contain" src={URL.createObjectURL(new Blob([fileinfo.bytes], { type: "video/mp4" }))} controls></video>
-                    {:else if fileinfo.ext === "wav"}
+                    {:else if ["flac", "mp3", "ogg", "wav"].includes(fileinfo.ext)}
                         <audio src={URL.createObjectURL(new Blob([fileinfo.bytes], { type: "audio/wav" }))} controls></audio>
                     {:else if fileinfo.ext === "pdf"}
                         <iframe title="App data viewer" src={URL.createObjectURL(new Blob([fileinfo.bytes], { type: "application/pdf" }))} frameborder="0"></iframe>

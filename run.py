@@ -150,6 +150,7 @@ def prompt_for_missing_params(args):
             try:
                 ipaddress.ip_address(target_ip)
                 args.target_ip = target_ip
+                break
             except ValueError:
                 print_error("Target IP must be a valid IPv4 or IPv6 address.")
 

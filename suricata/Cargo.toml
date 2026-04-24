@@ -12,6 +12,6 @@ members = [
     "database",
     "suricata-eve-postgres-output",
     "suricata-filedata-postgres-output",
-    #"suricata-packet-postgres-output",
+    "suricata-packet-postgres-output",
     "suricata-stream-postgres-output"
 ]

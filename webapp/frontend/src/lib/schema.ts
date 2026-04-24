@@ -2,7 +2,10 @@ import { z } from "zod/v4";
 
 
 export const flowsListFilters = z.object({
-    ts_to: z.string().optional().default(String(1e16)),
+    tick_op: z.string().optional(),
+    ts: z.string().optional(),
+    min_ts: z.string().optional(),
+    max_ts: z.string().optional(),
     services: z.array(z.string()).optional(),
     app_proto: z.string().optional(),
     search: z.string().optional(),

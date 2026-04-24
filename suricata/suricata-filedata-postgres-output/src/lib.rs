@@ -58,7 +58,6 @@ impl OutputWriter for Filedata {
 
 struct Context {
     tx: mpsc::SyncSender<Filedata>,
-    count: usize,
     filedata_blob: HashMap<u32, Vec<u8>>,
 }
 
@@ -75,11 +74,11 @@ extern "C" fn filedata_log(
     _dir: u8,
 ) -> c_int {
     // Handle FFI arguments
-    let context = unsafe { &mut *thread_data.cast::<Context>() };
-    let ff = unsafe { &mut *(ff) };
+    let ff = unsafe { ff.as_mut() }.expect("null ff pointer");
     let data_slice = unsafe { std::slice::from_raw_parts(data, data_len as usize) };
 
     // Write data blob to temporary buffer
+    let context = unsafe { thread_data.cast::<Context>().as_mut() }.expect("null thread_data pointer");
     match context.filedata_blob.get_mut(&ff.file_store_id) {
         Some(pending_blob) => {
             pending_blob.append(data_slice.to_owned().as_mut());
@@ -93,13 +92,12 @@ extern "C" fn filedata_log(
 
     if flags & ffi::OUTPUT_FILEDATA_FLAG_CLOSE != 0 {
         // Got last part of data, send filedata to database thread
-        context.count += 1;
-        let blob = context.filedata_blob.remove(&ff.file_store_id).unwrap();
-        let sha256 = ff.sha256.to_owned();
-        let filedata = Filedata { blob, sha256 };
-        if let Err(_err) = context.tx.send(filedata) {
-            log::error!("Failed to send filedata to database thread");
-            return -1;
+        if let Some(blob) = context.filedata_blob.remove(&ff.file_store_id) {
+            let sha256 = ff.sha256.to_owned();
+            let filedata = Filedata { blob, sha256 };
+            if let Err(err) = context.tx.send(filedata) {
+                panic!("Failed to send filedata to database thread: {err:?}");
+            }
         }
     }
     0
@@ -125,7 +123,6 @@ extern "C" fn filedata_thread_init(
     std::thread::spawn(move || database_client.run());
     let context_ptr = Box::into_raw(Box::new(Context {
         tx,
-        count: 0,
         filedata_blob: HashMap::new(),
     }));
 
@@ -140,7 +137,7 @@ extern "C" fn filedata_thread_deinit(
     thread_data: *mut *mut c_void,
 ) {
     let context = unsafe { Box::from_raw(thread_data.cast::<Context>()) };
-    log::info!("PostgreSQL output finished: count={}", context.count);
+    log::info!("PostgreSQL output finished");
     std::mem::drop(context);
 }
 
@@ -177,7 +174,7 @@ extern "C" fn plugin_init() {
 extern "C" fn SCPluginRegister() -> *const SCPlugin {
     let plugin = SCPlugin {
         version: SC_API_VERSION,
-        suricata_version: SC_PACKAGE_VERSION.as_ptr() as *const c_char,
+        suricata_version: SC_PACKAGE_VERSION.as_ptr().cast::<c_char>(),
         name: c"Filedata PostgreSQL Output".as_ptr(),
         plugin_version: c"0.1.0".as_ptr(),
         license: c"GPL-3.0".as_ptr(),

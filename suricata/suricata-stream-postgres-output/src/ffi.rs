@@ -9,7 +9,7 @@ use suricata_sys::sys::Flow;
 pub const OUTPUT_STREAMING_FLAG_TO_CLIENT: u8 = 0x8;
 
 pub type LoggerId = c_uint;
-pub const LOGGER_USER: LoggerId = 27;
+pub const LOGGER_USER: LoggerId = 26;
 pub type SCStreamingLogger = extern "C" fn(
     *mut *mut c_void, // ThreadVars *
     thread_data: *mut *mut c_void,

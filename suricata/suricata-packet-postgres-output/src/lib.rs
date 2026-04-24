@@ -55,7 +55,6 @@ impl OutputWriter for Payload {
 
 struct Context {
     tx: mpsc::SyncSender<Payload>,
-    count: usize,
     flow_packet_counter: HashMap<i64, i32>
 }
 
@@ -64,10 +63,8 @@ extern "C" fn packet_log(
     thread_data: *mut *mut c_void,
     p: *const ffi::Packet
 ) -> c_int {
-    if thread_data.is_null() { return -1; }
-    
     // Handle FFI arguments
-    let context = unsafe { &mut *thread_data.cast::<Context>() };
+    let p = unsafe { p.as_ref() }.expect("null pkt pointer");
     // Get packet payload len
     let data_len = unsafe { ffi::get_packet_payload_len(p) };
     // Get packet payload pointer
@@ -77,6 +74,8 @@ extern "C" fn packet_log(
     } else { 
         unsafe { slice::from_raw_parts(data, data_len as usize) }
     };
+    
+    let context = unsafe { thread_data.cast::<Context>().as_mut() }.expect("null thread_data pointer");
     
     // Get flow_id
     let flow_id = unsafe { ffi::get_flow_id(p) as i64 };
@@ -94,16 +93,14 @@ extern "C" fn packet_log(
     let direction = unsafe { ffi::wrap_PKT_IS_TOCLIENT(p) >> 1 };
     
     // Send packet payload to database thread
-    context.count += 1;
     let payload = Payload {
         flow_id,
         count,
         server_to_client: direction as i32,
         blob: data_slice.to_owned()
     };
-    if let Err(_err) = context.tx.send(payload) {
-        log::error!("Failed to send packet to database thread.");
-        return -1;
+    if let Err(err) = context.tx.send(payload) {
+        panic!("Failed to send packet to database thread: {err:?}");
     }
     
     0
@@ -115,8 +112,7 @@ extern "C" fn packet_condition(
     _thread_data: *mut *mut c_void,
     p: *const ffi::Packet
 ) -> bool {
-    //unsafe { !ffi::wrap_PacketIsTCP(p) }
-    true
+    unsafe { !ffi::wrap_PacketIsTCP(p) }
 }
 
 extern "C" fn packet_thread_init(
@@ -131,15 +127,11 @@ extern "C" fn packet_thread_init(
     let (tx, rx) = mpsc::sync_channel(config.buffer);
     let mut database_client = match Database::new(config.db_url, rx) {
         Ok(client) => client,
-        Err(err) => {
-            log::error!("Failed to initialize database client: {err:?}");
-            panic!()
-        }
+        Err(err) => panic!("Failed to initialize database client: {err:?}")
     };
     std::thread::spawn(move || database_client.run());
     let context_ptr = Box::into_raw(Box::new(Context {
         tx,
-        count: 0,
         flow_packet_counter: HashMap::new(),
     }));
     
@@ -154,14 +146,14 @@ extern "C" fn packet_thread_deinit(
     thread_data: *mut *mut c_void
 ) {
     let context = unsafe { Box::from_raw(thread_data.cast::<Context>()) };
-    log::info!("PostgreSQL output finished: count={}", context.count);
+    log::info!("PostgreSQL output finished");
     std::mem::drop(context);
 }
 
 extern "C" fn plugin_init() {
     // Init Rust logger
     // don't log using `suricata` crate to reduce build time.
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"));
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     
     // Register new TCP stream logger
     if !unsafe {
@@ -185,7 +177,7 @@ extern "C" fn plugin_init() {
 extern "C" fn SCPluginRegister() -> *const SCPlugin {
     let plugin = SCPlugin {
         version: SC_API_VERSION,
-        suricata_version: SC_PACKAGE_VERSION.as_ptr() as *const c_char,
+        suricata_version: SC_PACKAGE_VERSION.as_ptr().cast::<c_char>(),
         name: c"UDP packet data PostgreSQL Output".as_ptr(),
         plugin_version: c"0.1.0".as_ptr(),
         license: c"GPL-3.0".as_ptr(),

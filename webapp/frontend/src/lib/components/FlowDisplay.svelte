@@ -12,15 +12,18 @@
     let rawDataActiveView: "utf8" | "hex" = $state("utf8");
 
     const MAGIC_EXT = {
+        'Audio file': 'mp3',
+        'FLAC audio': 'flac',
         'GIF image': 'gif',
         'HTML document': 'html',
         'ISO Media': 'mp4',
         'JPEG image': 'jpg',
+        'Ogg data': 'ogg',
         'PDF document': 'pdf',
         'PNG image': 'png',
+        'RIFF (little-endian) data, WAVE audio': 'wav',
         'SVG Scalable Vector Graphics image': 'svg',
         'VGM Video Game Music': 'vgm',
-        'RIFF (little-endian) data, WAVE audio': 'wav',
         'Web Open Font': 'woff',
         'Zip archive': 'zip'
     };
@@ -222,15 +225,15 @@
                 <p class="my-0"><i class="bi bi-arrow-left"></i> {flowData.flow.data.flow.pkts_toclient} packets ({flowData.flow.data.flow.bytes_toclient} bytes)</p>
             </div>
             <div class="d-flex align-items-stretch">
-                <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
-                    <button onclick={() => ctfConfig.hideSideBar = !ctfConfig.hideSideBar} class="btn btn-outline-primary" aria-label="Fullscreen">
+                <div class="btn-group-vertical gap-2" role="group" aria-label="Vertical button group">
+                    <button onclick={() => ctfConfig.hideSideBar = !ctfConfig.hideSideBar} class="btn btn-primary rounded" aria-label="Fullscreen">
                         {#if ctfConfig.hideSideBar}
                             <i class="bi bi-fullscreen-exit"></i>
                         {:else}
                             <i class="bi bi-fullscreen"></i>
                         {/if}
                     </button>
-                    <a href="/api/flow/{flowData.flow.id}/pcap" download="{flowData.flow.id}.lz4" class="btn btn-success" aria-label="Download pcap"><i class="bi bi-file-earmark-arrow-down-fill"></i></a>
+                    <a href="/api/flow/{flowData.flow.id}/pcap" download="{flowData.flow.id}.lz4" class="btn btn-success rounded" aria-label="Download pcap"><i class="bi bi-file-earmark-arrow-down-fill"></i></a>
                 </div>
             </div>
         </div>

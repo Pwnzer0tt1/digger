@@ -17,7 +17,7 @@ pub struct File {
     fd: c_int,
     name: *mut u8,
     magic: *mut c_char,
-    next: *mut File,
+    next: *mut Self,
     md5_ctx: *mut c_void,
     md5: [u8; 16],
     sha1_ctx: *mut c_void,

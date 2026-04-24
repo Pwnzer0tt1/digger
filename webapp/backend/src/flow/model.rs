@@ -1,0 +1,58 @@
+use crate::models::{FlowTag, Tag};
+use serde::{Deserialize, Serialize};
+
+use crate::models::{Alert, Event, Flow};
+
+
+#[derive(Serialize)]
+pub struct FlowData {
+    pub flow: Flow,
+    pub events: Vec<Event>,
+    pub alerts: Vec<Alert>
+}
+
+#[derive(Deserialize)]
+pub struct FlowsQuery {
+    pub filters: String
+}
+
+#[derive(Deserialize, Debug)]
+pub enum TickOp {
+    Lt,
+    Le,
+    Gt,
+    Ge,
+    Eq,
+    Ne,
+    BetweenGtLt,
+    BetweenGtLe,
+    BetweenGeLt,
+    BetweenGeLe
+}
+
+#[derive(Deserialize, Debug)]
+pub struct FlowsFilters {
+    pub tick_op: Option<TickOp>,
+    pub ts: Option<String>,
+    pub min_ts: Option<String>,
+    pub max_ts: Option<String>,
+    pub services: Option<Vec<String>>,
+    pub app_proto: Option<String>,
+    pub search: Option<String>,
+    pub tags_require: Vec<String>,
+    pub tags_deny: Vec<String>
+}
+
+#[derive(Serialize)]
+pub struct FlowsList {
+    pub flows: Vec<FlowWithAlerts>,
+    pub app_protos: Vec<Option<String>>,
+    pub tags: Vec<Tag>
+}
+
+#[derive(Serialize)]
+pub struct FlowWithAlerts {
+    #[serde(flatten)]
+    pub flow: Flow,
+    pub alerts: Vec<FlowTag>
+}

@@ -14,7 +14,3 @@ services_config.json
 .idea
 .vscode
 .venv
-
-# This is for testing
-tshark/dumps/**
-!tshark/dumps/.gitkeep

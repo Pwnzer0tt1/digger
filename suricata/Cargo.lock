@@ -112,6 +112,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "database"
+version = "0.1.0"
+dependencies = [
+ "diesel",
+ "diesel_migrations",
+ "dotenvy",
+ "env_logger",
+ "log",
+]
+
+[[package]]
 name = "diesel"
 version = "2.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -410,24 +421,57 @@ name = "suricata-eve-postgres-output"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "database",
  "diesel",
- "diesel_migrations",
  "dotenvy",
  "env_logger",
  "log",
+ "suricata-sys",
 ]
 
 [[package]]
 name = "suricata-filedata-postgres-output"
 version = "0.1.0"
 dependencies = [
- "chrono",
+ "database",
  "diesel",
- "diesel_migrations",
  "dotenvy",
  "env_logger",
  "log",
+ "suricata-sys",
 ]
+
+[[package]]
+name = "suricata-packet-postgres-output"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "database",
+ "diesel",
+ "dotenvy",
+ "env_logger",
+ "log",
+ "suricata-sys",
+]
+
+[[package]]
+name = "suricata-stream-postgres-output"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "database",
+ "diesel",
+ "dotenvy",
+ "env_logger",
+ "log",
+ "suricata-sys",
+]
+
+[[package]]
+name = "suricata-sys"
+version = "8.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a750fe157271547ac04470920449b98b4daaec7f1deb1e7a0ada848bdd22b781"
 
 [[package]]
 name = "syn"

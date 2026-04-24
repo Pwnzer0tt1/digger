@@ -27,6 +27,8 @@ eval "$SURICATA_CMD" \
     --set default-rule-path=suricata/rules \
     --set plugins.0=suricata/libeve_postgres_output.so \
     --set plugins.1=suricata/libfiledata_postgres_output.so \
+    --set plugins.2=suricata/libstream_postgres_output.so \
+    --set plugins.3=suricata/libpacket_postgres_output.so \
     --set outputs.0.fast.enabled=no \
     --set outputs.1.eve-log.filetype=postgres \
     --set outputs.1.eve-log.types.2.anomaly.types.decode=yes \
@@ -38,23 +40,25 @@ eval "$SURICATA_CMD" \
     --set outputs.1.eve-log.types.31.pgsql.enabled=yes \
     --set outputs.1.eve-log.types.31.pgsql.passwords=yes \
     --set outputs.3.pcap-log.enabled=${PCAP_LOG:=yes} \
-    --set outputs.3.pcap-log.limit=33554432 \
+    --set outputs.3.pcap-log.limit=32MiB \
     --set outputs.3.pcap-log.compression=lz4 \
     --set outputs.3.pcap-log.dir=pcaps \
-    --set outputs.9.lua.enabled=yes \
-    --set outputs.9.lua.cpath=/usr/lib/lua/5.4/?.so \
-    --set outputs.9.lua.scripts.0=suricata/suricata-tcp-payload-postgres-output.lua \
-    --set outputs.9.lua.scripts.1=suricata/suricata-udp-payload-postgres-output.lua \
     --set app-layer.protocols.pgsql.enabled=yes \
     --set app-layer.protocols.modbus.enabled=yes \
     --set app-layer.protocols.dnp3.enabled=yes \
     --set app-layer.protocols.enip.enabled=yes \
-    --set app-layer.protocols.http.libhtp.default-config.request-body-limit=52428800 \
+    --set app-layer.protocols.http.libhtp.default-config.request-body-limit=50MiB \
     --set app-layer.protocols.http.libhtp.default-config.response-body-limit=0 \
+    --set app-layer.protocols.sip.enabled=no \
+    --set stream.midstream=true \
+    --set stream.reassembly.memcap=4GiB \
     --set stream.reassembly.depth=50mb \
     --set flow-timeouts.tcp.established=60 \
     --set flow-timeouts.tcp.emergency-established=60 \
     --set flow-timeouts.tcp.closed=5 \
     --set flow-timeouts.tcp.emergency-closed=5 \
+    --set flow-timeouts.udp.new=10 \
+    --set flow-timeouts.udp.established=10 \
+    --set flow-timeouts.udp.emergency-established=10 \
     --set security.lua.allow-rules=yes \
     "$@"

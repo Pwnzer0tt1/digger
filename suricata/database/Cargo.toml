@@ -1,0 +1,14 @@
+# Copyright (C) 2025 Pwnzer0tt1
+# Licensed under GPL-3.0
+
+[package]
+name = "database"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+env_logger = { version = "0.11.8", default-features = false }
+log = "0.4.27"
+diesel = { version = "2.2.0", features = ["postgres"] }
+diesel_migrations = "2.2.0"
+dotenvy = "0.15"

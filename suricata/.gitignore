@@ -24,3 +24,5 @@ target
 output/filestore
 output/*.log
 output/pcaps/log.pcap.*.lz4
+
+rules/suricata.rules

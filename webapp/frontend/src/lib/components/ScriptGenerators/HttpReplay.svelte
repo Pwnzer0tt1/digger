@@ -68,9 +68,6 @@ if len(sys.argv) &gt; 2:
 else:
     EXTRA = []
 
-# SNIPPET: Generate uniformly random strings of length `k`
-# rand_choice = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-# value = "".join(random.choices(rand_choice, k=16))
 
 # FIXME: You should identify if a flagid was used in the following
 # payload. If it is the case, then you should loop using EXTRA.

@@ -10,7 +10,6 @@ import subprocess
 import sys
 import ipaddress
 
-ENV_FILE = ".env"
 COMPOSE_FILES = {
     "A": "docker-compose-a.yml",
     "B": "docker-compose-b.yml",
@@ -556,11 +555,12 @@ def handle_logs_command(args):
     print_progress("Following container logs...")
 
     # Check if .env exists to provide context
-    if not os.path.exists(ENV_FILE):
+    if os.path.exists("DIGGER_MODE"):
+        with open("DIGGER_MODE", "r") as digger_mode:
+            compose_file = COMPOSE_FILES[digger_mode.read().strip().strip("\n")]
+    else:
         print_warning("No configuration file found. Using default compose file...")
-
-    # Default to mode C compose file
-    compose_file = COMPOSE_FILES["C"]
+        compose_file = COMPOSE_FILES["C"]
 
     # Check if compose file exists
     if not os.path.exists(compose_file):

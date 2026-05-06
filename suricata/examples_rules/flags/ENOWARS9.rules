@@ -1,0 +1,5 @@
+# ENOWARS 2025 used Brainfuck codes to represent flags
+# These rules are noisy and slow.
+alert ip any any -> any any (msg: "Brainfuck code sent to client"; flow:to_client; content: "@"; pcre: "/(\@[\+\-\>\<\[\]\.,\&glt]{20,}\@)/, flow:match"; metadata: tag BRAINFK OUT, color danger; sid: 6001;)
+alert ip any any -> any any (msg: "Brainfuck code sent to client"; flow:to_client; file.data; content: "@"; pcre: "/(\@[\+\-\>\<\[\]\.,\&glt]{20,}\@)/, flow:match"; metadata: tag BRAINFK OUT, color danger; sid: 6002;)
+alert ip any any -> any any (msg: "Brainfuck code received"; flow:to_server; content: "@"; pcre: "/(\@[\+\-\>\<\[\]\.,\&glt]{20,}\@)/, flow:match"; metadata: tag BRAINFK IN, color success; sid: 6003;)

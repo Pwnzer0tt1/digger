@@ -1,10 +1,12 @@
 # Copyright (C) 2024  ANSSI
 # SPDX-License-Identifier: CC0-1.0
-input_pcaps/*
 
-# Configurazione
+input_pcaps/*
+!input_pcaps/.gitkeep
+
+# Configuration
 .env
-services_config.json
+DIGGER_MODE
 
 # Python
 **/__pycache__

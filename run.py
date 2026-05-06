@@ -10,7 +10,6 @@ import subprocess
 import sys
 import ipaddress
 
-ENV_FILE = ".env"
 COMPOSE_FILES = {
     "A": "docker-compose-a.yml",
     "B": "docker-compose-b.yml",
@@ -133,6 +132,54 @@ def prompt_for_mode():
         print_error("Invalid mode. Please choose from: A, B, C")
 
 
+def prompt_for_rules():
+    """Prompt user for Suricat rules selection."""
+    print_separator(char="═")
+    print(f"{Colors.BOLD}{Colors.CYAN}Rules Selection{Colors.END}".center(OFFSET_PRINT + 12))
+    print_separator()
+    
+    print_info("Place your custom rules inside the file `suricata/rules/suricata.rules`.")
+    print_warning("If you're also using default rules, make sure to use unique SIDs for your rules. Check the ranges already used in `suricata/examples_rules/suricata.rules`.")
+    print_info("Select 'Others' option if you don't want to use default rules.")
+    
+    flags_rules = {"others": "Others"}
+    for f in os.listdir("./suricata/examples_rules/flags"):
+        filename = f.split(".")[0]
+        flags_rules[filename.lower()] = filename 
+    
+    print_info("Choose rules to use for flags identification:")
+    for f in flags_rules.values():
+        print(f"  {Colors.CYAN}{f}{Colors.END}")
+    print()
+    
+    while True:
+        rule = prompt_styled("Enter rule name").strip().lower()
+        if rule in flags_rules:
+            if rule == "others":
+                rule = None
+            else:
+                with open(f"./suricata/examples_rules/flags/{flags_rules[rule]}.rules", "r") as src:
+                    with open("./suricata/rules/suricata.rules", "a") as dst:
+                        dst.write("\n")
+                        dst.write(src.read())
+            break
+        else:
+            print_error("Invalid input.")
+    
+    while True:
+        r = (prompt_styled("Do want to use default rules for Attack & Defence CTFs? (y/n)", required=False, default="y").strip().lower())
+        if r in ["y", "yes", "yay", "ye", "yep", ""]:
+            with open("./suricata/examples_rules/suricata.rules", "r") as src:
+                with open("./suricata/rules/suricata.rules", "a") as dst:
+                    dst.write("\n")
+                    dst.write(src.read())
+            break
+        elif r in ["n", "no", "nay", "nop", "nope"]:
+            break
+        else:
+            print_error("Invalid input. Please enter 'y' or 'n'.")
+    
+    
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
@@ -181,13 +228,12 @@ def prompt_for_missing_params(args):
         print_error("Can't find the file. Make sure to enter a valid path.")
 
 
-def compose_down(compose_file):
+def compose_down(compose_file: str) -> bool:
     """Stop and remove containers defined in the specified docker-compose file"""
     print_progress("Stopping running containers...")
     
-    # Check if ENV file exists
-    if not os.path.exists(ENV_FILE):
-        print_warning(f"{ENV_FILE} file not found. Skipping container stop operation.")
+    if not os.path.exists("DIGGER_MODE"):
+        print_warning("DIGGER_MODE file not found. Skipping container stop operation.")
         print()
         return False
     
@@ -259,6 +305,28 @@ def clear_suricata():
         print()
 
 
+def clear_suricata_rules():
+    """Clean the Suricata rules directory"""
+    if not os.path.exists("./suricata/rules"):
+        print_warning("Suricata rules directory not found. Skipping clear operation.")
+        os.makedirs("./suricata/rules", exist_ok=True)
+        return
+
+    if not os.listdir("./suricata/rules"):
+        print_info("Suricata rules directory already empty. Skipping clear operation.")
+        return
+
+    cmd = "sudo rm -rf ./suricata/rules/*"
+    print_progress("Cleaning Suricata output directory...")
+    try:
+        subprocess.run(cmd, check=True, shell=True)
+        print_success("Suricata rules directory cleaned successfully!")
+        print()
+    except subprocess.CalledProcessError as e:
+        print_error(f"Failed to clean Suricata rules directory: {e}")
+        print_warning("You may need to check permissions or run with appropriate privileges.")
+        print()
+
 def get_compose_file_for_mode(mode):
     """Get the appropriate compose file for the given mode"""
     return COMPOSE_FILES.get(mode.upper(), COMPOSE_FILES["C"])
@@ -292,15 +360,30 @@ def handle_start_command(args):
         # Clear Suricata output
         while True:
             r = (prompt_styled("Do you want to clear Suricata output directory? (y/n)", required=False, default="n").strip().lower())
-            if r in ["y", "yes"]:
+            if r in ["y", "yes", "yay", "ye", "yep"]:
                 clear_suricata()
                 break
-            elif r in ["n", "no", ""]:
+            elif r in ["n", "no", "nay", "nop", "nope", ""]:
                 print_warning("Suricata output directory will not be cleared.")
                 print()
                 break
             else:
                 print_error("Invalid input. Please enter 'y' or 'n'.")
+                
+        # Clear Suricata rules
+        while True:
+            r = (prompt_styled("Do you want to clear Suricata rules directory? (y/n)", required=False, default="n").strip().lower())
+            if r in ["y", "yes", "yay", "ye", "yep"]:
+                clear_suricata_rules()
+                break
+            elif r in ["n", "no", "nay", "nop", "nope", ""]:
+                print_warning("Suricata rules directory will not be cleared.")
+                print()
+                break
+            else:
+                print_error("Invalid input. Please enter `y` or `n`.")
+
+    prompt_for_rules()
 
     # Mode-specific initialization
     if mode == "A":
@@ -327,7 +410,9 @@ def handle_start_command(args):
             env_file.write(f"KEY=\"{args.key}\"\n")
             env_file.write(f"PCAP_COMMAND=\"ssh {args.user}@{args.target_ip} -i /root/.ssh/identity -oStrictHostKeyChecking=no\nsudo  tcpdump -U --immediate-mode -ni {args.device} -s 65535 -w - not tcp port 22\"")
             
-
+    with open("DIGGER_MODE", "w") as digger_mode:
+        digger_mode.write(mode)
+            
     print_separator(char="═")
     print_success("Configuration completed successfully!")
     print_separator(char="═")
@@ -339,6 +424,7 @@ def handle_start_command(args):
     print_separator(char="═")
     print_success(f"Digger successfully started in mode {mode}!")
     print(f"  {Colors.BOLD}Web interface:{Colors.END} {Colors.CYAN}http://127.0.0.1:8000{Colors.END}")
+    print(f"  {Colors.BOLD}Grafana interface:{Colors.END} {Colors.CYAN}http://127.0.0.1:8001{Colors.END}")
     print_separator(char="═")
 
 
@@ -346,7 +432,11 @@ def handle_stop_command():
     """Handle the stop command"""
     print_progress("Stopping Digger...")
 
-    compose_file = COMPOSE_FILES["C"]
+    if os.path.exists("DIGGER_MODE"):
+        with open("DIGGER_MODE", "r") as digger_mode:
+            compose_file = COMPOSE_FILES[digger_mode.read().strip().strip("\n")]
+    else:
+        compose_file = COMPOSE_FILES["C"]
 
     # Check if compose file exists
     if not os.path.exists(compose_file):
@@ -373,15 +463,28 @@ def handle_clear_command(args):
         # Clear Suricata output
         while True:
             r = (prompt_styled("Do you want to clear Suricata output directory? (y/n)", required=False, default="n").strip().lower())
-            if r in ["y", "yes"]:
+            if r in ["y", "yes", "yay", "ye", "yep"]:
                 clear_suricata()
                 break
-            elif r in ["n", "no", ""]:
+            elif r in ["n", "no", "nay", "nop", "nope", ""]:
                 print_warning("Suricata output directory will not be cleared.")
                 print()
                 break
             else:
                 print_error("Invalid input. Please enter 'y' or 'n'.")
+                
+        # Clear Suricata rules
+        while True:
+            r = (prompt_styled("Do you want to clear Suricata rules directory? (y/n)", required=False, default="n").strip().lower())
+            if r in ["y", "yes", "yay", "ye", "yep"]:
+                clear_suricata_rules()
+                break
+            elif r in ["n", "no", "nay", "nop", "nope", ""]:
+                print_warning("Suricata rules directory will not be cleared.")
+                print()
+                break
+            else:
+                print_error("Invalid input. Please enter `y` or `n`.")
 
         return
 
@@ -395,6 +498,9 @@ def handle_clear_command(args):
 
         # Clear Suricata output
         clear_suricata()
+        
+        # Clear Suricata rules
+        clear_suricata_rules()
 
         print_success("All data cleared successfully!")
         return
@@ -409,6 +515,10 @@ def handle_clear_command(args):
 
         clear_suricata()
         cleared_items.append("Suricata output")
+
+    if args.rules:
+        clear_suricata_rules()
+        cleared_items.append("Suricata rules")
 
     if cleared_items:
         print_success(f"Cleared: {', '.join(cleared_items)}")
@@ -445,11 +555,12 @@ def handle_logs_command(args):
     print_progress("Following container logs...")
 
     # Check if .env exists to provide context
-    if not os.path.exists(ENV_FILE):
+    if os.path.exists("DIGGER_MODE"):
+        with open("DIGGER_MODE", "r") as digger_mode:
+            compose_file = COMPOSE_FILES[digger_mode.read().strip().strip("\n")]
+    else:
         print_warning("No configuration file found. Using default compose file...")
-
-    # Default to mode C compose file
-    compose_file = COMPOSE_FILES["C"]
+        compose_file = COMPOSE_FILES["C"]
 
     # Check if compose file exists
     if not os.path.exists(compose_file):
@@ -567,6 +678,12 @@ def create_parser():
     parser_clear.add_argument(
         "--suricata",
         "-s",
+        action="store_true",
+        help="Clean Suricata output and stop containers",
+    )
+    parser_clear.add_argument(
+        "--rules",
+        "-r",
         action="store_true",
         help="Clean Suricata output and stop containers",
     )

@@ -351,7 +351,15 @@ def clear_config():
 
 def clear_volume():
     """Delete the `digger_pgdata` volume"""
+    try:
+        print_info("Checking if Digger database volume exists.")
+        subprocess.run("docker volume inspect digger_pgdata", check=True, shell=True, capture_output=True)
+    except subprocess.CalledProcessError:
+        print_warning("Digger database volume `digger_pgdata` doesn't exists, skipping clear operation.")
+        return
+        
     cmd = "docker volume rm digger_pgdata"
+    print_progress("Removing Digger database volume...")
     try:
         subprocess.run(cmd, check=True, shell=True)
         print_success("Digger database volume removed successfully!")

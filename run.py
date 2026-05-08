@@ -10,6 +10,8 @@ import subprocess
 import sys
 import ipaddress
 
+SURICATA_RULES = "./suricata/rules"
+SURICATA_OUTPUT = "./suricata/output"
 DIGGER_MODE = "./config/DIGGER_MODE"
 CTF_CONFIG = "./config/ctf_config.json"
 COMPOSE_FILES = {
@@ -286,12 +288,12 @@ def compose_up(compose_file, build=True):
 
 def clear_suricata():
     """Clean the Suricata output directory"""
-    if not os.path.exists("./suricata/output"):
+    if not os.path.exists(SURICATA_OUTPUT):
         print_warning("Suricata output directory not found. Skipping clear operation.")
-        os.makedirs("./suricata/output", exist_ok=True)
+        os.makedirs(SURICATA_OUTPUT, exist_ok=True)
         return
 
-    if not os.listdir("./suricata/output"):
+    if not os.listdir(SURICATA_OUTPUT):
         print_info("Suricata output directory already empty. Skipping clear operation.")
         return
 
@@ -309,12 +311,12 @@ def clear_suricata():
 
 def clear_suricata_rules():
     """Clean the Suricata rules directory"""
-    if not os.path.exists("./suricata/rules"):
+    if not os.path.exists(SURICATA_RULES):
         print_warning("Suricata rules directory not found. Skipping clear operation.")
-        os.makedirs("./suricata/rules", exist_ok=True)
+        os.makedirs(SURICATA_RULES, exist_ok=True)
         return
 
-    if not os.listdir("./suricata/rules"):
+    if not os.listdir(SURICATA_RULES):
         print_info("Suricata rules directory already empty. Skipping clear operation.")
         return
 
@@ -344,6 +346,18 @@ def clear_config():
         print()
     except subprocess.CalledProcessError as e:
         print_error(f"Failed to clean Digger config rules directory: {e}")
+        print_warning("You may need to check permissions or run with appropriate privileges.")
+        print()
+
+def clear_volume():
+    """Delete the `digger_pgdata` volume"""
+    cmd = "docker volume rm digger_pgdata"
+    try:
+        subprocess.run(cmd, check=True, shell=True)
+        print_success("Digger database volume removed successfully!")
+        print()
+    except subprocess.CalledProcessError as e:
+        print_error(f"Failed to remove Digger database volume directory: {e}")
         print_warning("You may need to check permissions or run with appropriate privileges.")
         print()
 
@@ -415,6 +429,18 @@ def handle_start_command(args):
             else:
                 print_error("Invalid input. Please enter `y` or `n`.")
 
+        while True:
+            r = (prompt_styled("Do you want to clear Digger database volume directory? (y/n)", required=False, default="n").strip().lower())
+            if r in ["y", "yes", "yay", "ye", "yep"]:
+                clear_volume()
+                break
+            elif r in ["n", "no", "nay", "nop", "nope", ""]:
+                print_warning("Digger config rules directory will not be cleared.")
+                print()
+                break
+            else:
+                print_error("Invalid input. Please enter `y` or `n`.")
+            
     prompt_for_rules()
 
     # Mode-specific initialization
@@ -536,6 +562,9 @@ def handle_clear_command(args):
 
         # Clear Digger config
         clear_config()
+
+        # Clear Digger database volume
+        clear_volume()
 
         print_success("All data cleared successfully!")
         return
@@ -727,6 +756,12 @@ def create_parser():
         "-c",
         action="store_true",
         help="Clean Digger configs"
+    )
+    parser_clear.add_argument(
+        "--database",
+        "-d",
+        action="store_true",
+        help="Clean database volume"
     )
 
     # Status command - simple container status

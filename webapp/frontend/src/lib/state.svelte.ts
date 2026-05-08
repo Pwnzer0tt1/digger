@@ -1,4 +1,11 @@
 import type { CtfConfig, Flow, FlowsListFilters } from "./schema";
+import type { TypedWorker } from "$lib/components/Wiregasm/types";
+
+export const wiregasmState: {
+    worker: TypedWorker | null
+} = $state({
+    worker: null
+});
 
 
 export const selectedFlow: { 

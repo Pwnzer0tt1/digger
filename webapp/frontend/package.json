@@ -33,10 +33,14 @@
 		"zod": "^3.25.67"
 	},
 	"dependencies": {
+		"@goodtools/wiregasm": "^1.9.1",
 		"ace-builds": "^1.43.1",
 		"bootstrap": "^5.3.7",
 		"bootstrap-icons": "^1.13.1",
+		"buffer": "^6.0.3",
 		"chart.js": "^4.5.0",
-		"svelte-sonner": "^1.1.0"
+		"pako": "^2.1.0",
+		"svelte-sonner": "^1.1.0",
+		"ws": "^8.20.0"
 	}
 }

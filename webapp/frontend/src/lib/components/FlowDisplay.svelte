@@ -6,7 +6,7 @@
 	import RawReplay from "./ScriptGenerators/RawReplay.svelte";
 	import HttpFlow from "./AppProtoViewers/HTTP.svelte";
 	import WebsocketFlow from "./AppProtoViewers/Websocket.svelte";
-    
+    import WiregasmModal from "./Wiregasm/WiregasmModal.svelte";
 
     let appDataActiveView: "render" | "utf8" | "hex" = $state("render");
     let rawDataActiveView: "utf8" | "hex" = $state("utf8");
@@ -168,6 +168,8 @@
     function changeRawDataView(event: any) {
         rawDataActiveView = event.currentTarget.value;
     }
+
+    let showWiregasm = $state(false);
 
     let editorEl: HTMLDivElement | null = $state(null);
     let editor: any;
@@ -371,4 +373,7 @@
             </div>
         </div>
     </div>
+
+    <button onclick={() => showWiregasm = true} class="btn btn-primary mt-3 w-100" aria-label="Open in Wiregasm">Open in Wiregasm</button>
+    <WiregasmModal bind:show={showWiregasm} {rawFlowData} flow={flowData.flow} filename="{flowData.flow.id}.pcap" />
 {/await}

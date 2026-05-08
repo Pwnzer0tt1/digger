@@ -18,6 +18,7 @@
     import "prettier/standalone.js";
 	import { onMount } from "svelte";
 	import { Toaster } from "svelte-sonner";
+	import { wiregasmState } from "$lib/state.svelte";
 
 
     let { children } = $props();
@@ -37,6 +38,11 @@
 
     onMount(() => {
         document.documentElement.setAttribute('data-bs-theme', localStorage.getItem('theme') || "light");
+        if (!wiregasmState.worker) {
+            wiregasmState.worker = new Worker(new URL('$lib/components/Wiregasm/wireshark.worker.ts', import.meta.url), {
+                type: 'module'
+            }) as any;
+        }
     });
 </script>
 

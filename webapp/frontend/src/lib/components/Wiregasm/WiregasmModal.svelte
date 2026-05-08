@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
 	import DissectionTree from './DissectionTree.svelte';
 	import DissectionDump from './DissectionDump.svelte';
-	import type { TypedWorker, WorkerResponse, WorkerResponseMap } from './types';
+	import type { WorkerResponse, WorkerResponseMap } from './types';
 	import { wiregasmState } from '$lib/state.svelte';
 	import { generatePcap } from './make_pcap';
 	import { Buffer } from 'buffer';

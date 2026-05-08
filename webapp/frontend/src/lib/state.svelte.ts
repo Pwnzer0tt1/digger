@@ -2,9 +2,9 @@ import type { CtfConfig, Flow, FlowsListFilters } from "./schema";
 import type { TypedWorker } from "$lib/components/Wiregasm/types";
 
 export const wiregasmState: {
-    worker: TypedWorker | null
+    worker: TypedWorker | null,
 } = $state({
-    worker: null
+    worker: null,
 });
 
 
@@ -17,7 +17,7 @@ export const selectedFlow: {
 });
 
 export const selectedPanel: {
-    view: "ServicesManager" | "Settings" | "Stats" | undefined
+    view: "ServicesManager" | "Settings" | "WiregasmSettings" | "Stats" | undefined
 } = $state({
     view: undefined
 });

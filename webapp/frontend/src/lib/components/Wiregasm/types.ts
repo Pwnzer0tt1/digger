@@ -21,6 +21,56 @@ export interface WorkerMessageMap {
 		name: string;
 		arrayBuffer: ArrayBuffer;
 	};
+	'list-modules': object;
+	'list-prefs': {
+		module: string;
+	};
+	'set-pref': {
+		module: string;
+		key: string;
+		value: string;
+	};
+	'apply-prefs': object;
+	'upload-file': {
+		name: string;
+		data: ArrayBuffer;
+		directory?: string;
+	};
+	'list-files': {
+		path: string;
+	};
+	'delete-file': {
+		path: string;
+	};
+	'reset-prefs': object;
+}
+
+export interface FsEntry {
+	name: string;
+	path: string;
+	isDirectory: boolean;
+}
+
+export interface SerializedPrefModule {
+	name: string;
+	title: string;
+	description: string;
+	use_gui: boolean;
+	submodules: SerializedPrefModule[];
+}
+
+export interface SerializedPref {
+	name: string;
+	title: string;
+	description: string;
+	type: number;
+	uint_value: number;
+	uint_base_value: number;
+	bool_value: boolean;
+	string_value: string;
+	range_value: string;
+	// runtime fields from C++ that may not be in types
+	enumvals?: { name: string; value: number; description: string }[];
 }
 
 // Worker 发送的消息类型
@@ -46,6 +96,27 @@ export interface WorkerResponseMap {
 	processed: {
 		summary: LoadResponse;
 		name: string;
+	};
+	modules: {
+		modules: SerializedPrefModule[];
+	};
+	prefs: {
+		prefs: SerializedPref[];
+	};
+	'pref-set': {
+		code: number;
+		error: string;
+	};
+	'prefs-applied': object;
+	'file-uploaded': {
+		path: string;
+	};
+	'files-listed': {
+		path: string;
+		entries: FsEntry[];
+	};
+	'file-deleted': {
+		path: string;
 	};
 }
 

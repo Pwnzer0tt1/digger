@@ -10,6 +10,8 @@ import subprocess
 import sys
 import ipaddress
 
+DIGGER_MODE = "./config/DIGGER_MODE"
+CTF_CONFIG = "./config/ctf_config.json"
 COMPOSE_FILES = {
     "A": "docker-compose-a.yml",
     "B": "docker-compose-b.yml",
@@ -232,7 +234,7 @@ def compose_down(compose_file: str) -> bool:
     """Stop and remove containers defined in the specified docker-compose file"""
     print_progress("Stopping running containers...")
     
-    if not os.path.exists("DIGGER_MODE"):
+    if not os.path.exists(DIGGER_MODE):
         print_warning("DIGGER_MODE file not found. Skipping container stop operation.")
         print()
         return False
@@ -327,6 +329,24 @@ def clear_suricata_rules():
         print_warning("You may need to check permissions or run with appropriate privileges.")
         print()
 
+def clear_config():
+    """Clean the Digger config directory"""
+    if not os.path.exists("./config"):
+        print_warning("Config Digger rules directory not found. Skipping clear operation.")
+        os.makedirs("./config", exist_ok=True)
+        return
+
+    cmd = "sudo rm -rf ./config/*"
+    print_progress("Cleaning Digger config output directory...")
+    try:
+        subprocess.run(cmd, check=True, shell=True)
+        print_success("Digger config rules directory cleaned successfully!")
+        print()
+    except subprocess.CalledProcessError as e:
+        print_error(f"Failed to clean Digger config rules directory: {e}")
+        print_warning("You may need to check permissions or run with appropriate privileges.")
+        print()
+
 def get_compose_file_for_mode(mode):
     """Get the appropriate compose file for the given mode"""
     return COMPOSE_FILES.get(mode.upper(), COMPOSE_FILES["C"])
@@ -383,6 +403,18 @@ def handle_start_command(args):
             else:
                 print_error("Invalid input. Please enter `y` or `n`.")
 
+        while True:
+            r = (prompt_styled("Do you want to clear Digger config directory? (y/n)", required=False, default="n").strip().lower())
+            if r in ["y", "yes", "yay", "ye", "yep"]:
+                clear_config()
+                break
+            elif r in ["n", "no", "nay", "nop", "nope", ""]:
+                print_warning("Digger config rules directory will not be cleared.")
+                print()
+                break
+            else:
+                print_error("Invalid input. Please enter `y` or `n`.")
+
     prompt_for_rules()
 
     # Mode-specific initialization
@@ -410,7 +442,7 @@ def handle_start_command(args):
             env_file.write(f"KEY=\"{args.key}\"\n")
             env_file.write(f"PCAP_COMMAND=\"ssh {args.user}@{args.target_ip} -i /root/.ssh/identity -oStrictHostKeyChecking=no\nsudo  tcpdump -U --immediate-mode -ni {args.device} -s 65535 -w - not tcp port 22\"")
             
-    with open("DIGGER_MODE", "w") as digger_mode:
+    with open(DIGGER_MODE, "w") as digger_mode:
         digger_mode.write(mode)
             
     print_separator(char="═")
@@ -432,7 +464,7 @@ def handle_stop_command():
     """Handle the stop command"""
     print_progress("Stopping Digger...")
 
-    if os.path.exists("DIGGER_MODE"):
+    if os.path.exists(DIGGER_MODE):
         with open("DIGGER_MODE", "r") as digger_mode:
             compose_file = COMPOSE_FILES[digger_mode.read().strip().strip("\n")]
     else:
@@ -502,6 +534,9 @@ def handle_clear_command(args):
         # Clear Suricata rules
         clear_suricata_rules()
 
+        # Clear Digger config
+        clear_config()
+
         print_success("All data cleared successfully!")
         return
 
@@ -555,7 +590,7 @@ def handle_logs_command(args):
     print_progress("Following container logs...")
 
     # Check if .env exists to provide context
-    if os.path.exists("DIGGER_MODE"):
+    if os.path.exists(DIGGER_MODE):
         with open("DIGGER_MODE", "r") as digger_mode:
             compose_file = COMPOSE_FILES[digger_mode.read().strip().strip("\n")]
     else:
@@ -686,6 +721,12 @@ def create_parser():
         "-r",
         action="store_true",
         help="Clean Suricata output and stop containers",
+    )
+    parser_clear.add_argument(
+        "--config",
+        "-c",
+        action="store_true",
+        help="Clean Digger configs"
     )
 
     # Status command - simple container status

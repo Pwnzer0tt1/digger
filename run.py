@@ -135,6 +135,19 @@ def prompt_for_mode():
             return mode
         print_error("Invalid mode. Please choose from: A, B, C")
 
+def prompt_for_yn(prompt, y_func, n_txt, default_r = "n"):
+    while True:
+        r = (prompt_styled(prompt + " (y/n)", required=False, default=default_r).strip().lower())
+        if r in ["y", "yes", "yay", "ye", "yep"]:
+            y_func()
+            break
+        elif r in ["n", "no", "nay", "nop", "nope"]:
+            if n_txt is not None:
+                print_warning(n_txt)
+                print()
+            break
+        else:
+            print_error("Invalid input. Please enter `y` or `n`.")
 
 def prompt_for_rules():
     """Prompt user for Suricat rules selection."""
@@ -169,19 +182,13 @@ def prompt_for_rules():
             break
         else:
             print_error("Invalid input.")
-    
-    while True:
-        r = (prompt_styled("Do want to use default rules for Attack & Defence CTFs? (y/n)", required=False, default="y").strip().lower())
-        if r in ["y", "yes", "yay", "ye", "yep", ""]:
-            with open("./suricata/examples_rules/suricata.rules", "r") as src:
-                with open("./suricata/rules/suricata.rules", "a") as dst:
-                    dst.write("\n")
-                    dst.write(src.read())
-            break
-        elif r in ["n", "no", "nay", "nop", "nope"]:
-            break
-        else:
-            print_error("Invalid input. Please enter 'y' or 'n'.")
+
+    def create_suricata_rules():
+        with open("./suricata/examples_rules/suricata.rules", "r") as src:
+            with open("./suricata/rules/suricata.rules", "a") as dst:
+                dst.write("\n")
+                dst.write(src.read())
+    prompt_for_yn("Do want to use default rules for Attack & Defence CTFs?", create_suricata_rules, None, default_r="y")
     
     
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -400,55 +407,14 @@ def handle_start_command(args):
         print()
     elif not args.no_build:
         # Clear Suricata output
-        while True:
-            r = (prompt_styled("Do you want to clear Suricata output directory? (y/n)", required=False, default="n").strip().lower())
-            if r in ["y", "yes", "yay", "ye", "yep"]:
-                clear_suricata()
-                break
-            elif r in ["n", "no", "nay", "nop", "nope", ""]:
-                print_warning("Suricata output directory will not be cleared.")
-                print()
-                break
-            else:
-                print_error("Invalid input. Please enter 'y' or 'n'.")
-                
+        prompt_for_yn("Do you want to clear Suricata output directory?", clear_suricata, "Suricata output directory will not be cleared.")
         # Clear Suricata rules
-        while True:
-            r = (prompt_styled("Do you want to clear Suricata rules directory? (y/n)", required=False, default="n").strip().lower())
-            if r in ["y", "yes", "yay", "ye", "yep"]:
-                clear_suricata_rules()
-                break
-            elif r in ["n", "no", "nay", "nop", "nope", ""]:
-                print_warning("Suricata rules directory will not be cleared.")
-                print()
-                break
-            else:
-                print_error("Invalid input. Please enter `y` or `n`.")
-
-        while True:
-            r = (prompt_styled("Do you want to clear Digger config directory? (y/n)", required=False, default="n").strip().lower())
-            if r in ["y", "yes", "yay", "ye", "yep"]:
-                clear_config()
-                break
-            elif r in ["n", "no", "nay", "nop", "nope", ""]:
-                print_warning("Digger config rules directory will not be cleared.")
-                print()
-                break
-            else:
-                print_error("Invalid input. Please enter `y` or `n`.")
-
-        while True:
-            r = (prompt_styled("Do you want to clear Digger database volume directory? (y/n)", required=False, default="n").strip().lower())
-            if r in ["y", "yes", "yay", "ye", "yep"]:
-                clear_volume()
-                break
-            elif r in ["n", "no", "nay", "nop", "nope", ""]:
-                print_warning("Digger config rules directory will not be cleared.")
-                print()
-                break
-            else:
-                print_error("Invalid input. Please enter `y` or `n`.")
-            
+        prompt_for_yn("Do you want to clear Suricata rules directory?", clear_suricata_rules, "Suricata rules directory will not be cleared.")
+        # Clear Digger config
+        prompt_for_yn("Do you want to clear Digger config directory?", clear_config, "Digger config rules directory will not be cleared.")
+        # Remove Digger database volume
+        prompt_for_yn("Do you want to clear Digger database volume directory?", clear_volume, "Digger database volume will not be removed.")
+    
     prompt_for_rules()
 
     # Mode-specific initialization
@@ -527,30 +493,9 @@ def handle_clear_command(args):
         compose_down(compose_file)
 
         # Clear Suricata output
-        while True:
-            r = (prompt_styled("Do you want to clear Suricata output directory? (y/n)", required=False, default="n").strip().lower())
-            if r in ["y", "yes", "yay", "ye", "yep"]:
-                clear_suricata()
-                break
-            elif r in ["n", "no", "nay", "nop", "nope", ""]:
-                print_warning("Suricata output directory will not be cleared.")
-                print()
-                break
-            else:
-                print_error("Invalid input. Please enter 'y' or 'n'.")
-                
+        prompt_for_yn("Do you want to clear Suricata output directory?", clear_suricata, "Suricata output directory will not be cleared.")
         # Clear Suricata rules
-        while True:
-            r = (prompt_styled("Do you want to clear Suricata rules directory? (y/n)", required=False, default="n").strip().lower())
-            if r in ["y", "yes", "yay", "ye", "yep"]:
-                clear_suricata_rules()
-                break
-            elif r in ["n", "no", "nay", "nop", "nope", ""]:
-                print_warning("Suricata rules directory will not be cleared.")
-                print()
-                break
-            else:
-                print_error("Invalid input. Please enter `y` or `n`.")
+        prompt_for_yn("Do you want to clear Suricata rules directory?", clear_suricata_rules, "Suricata rules directory will not be cleared.")
 
         return
 

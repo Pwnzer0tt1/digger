@@ -5,8 +5,8 @@ input_pcaps/*
 !input_pcaps/.gitkeep
 
 # Configuration
-.env
-DIGGER_MODE
+config/*
+!config/.gitkeep
 
 # Python
 **/__pycache__

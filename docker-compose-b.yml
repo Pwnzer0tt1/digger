@@ -15,6 +15,7 @@ services:
       - "./input_pcaps:/input_pcaps:rw"
       - "./suricata/rules:/suricata/rules:ro"
       - "./suricata/output:/suricata/output:rw"
+      - "./config:/config:rw"
 
     # Mode B: capture interface (fast, requires root on vulnbox and in Docker)
     # Drastically reduces ingest delay, but requires to setup traffic mirroring

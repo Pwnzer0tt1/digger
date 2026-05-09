@@ -102,10 +102,10 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "The following images have been built and pushed to GitHub Container Registry:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- \`${{ env.REGISTRY }}/${{ steps.lowercase.outputs.repository }}/digger-suricata\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`${{ env.REGISTRY }}/${{ steps.lowercase.outputs.repository }}/digger-webapp\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`${{ env.REGISTRY }}/${{ steps.lowercase.outputs.repository }}/digger-grafana\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`${{ env.REGISTRY }}/${{ steps.lowercase.outputs.repository }}/digger-pcap-broker\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY }}/digger-suricata\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY }}/digger-webapp\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY }}/digger-grafana\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ env.REGISTRY }}/digger-pcap-broker\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Tags applied:**" >> $GITHUB_STEP_SUMMARY
           echo "- Branch name (for push events)" >> $GITHUB_STEP_SUMMARY

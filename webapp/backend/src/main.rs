@@ -13,9 +13,9 @@ async fn main() -> std::io::Result<()> {
     // Init CTF configuration and load existing JSON
     let mut ctf_config = CtfConfig::new();
     ctf_config
-        .load("./ctf_config.json")
+        .load()
         .expect("IO error while loading CTF configuration.");
-    ctf_config.save("./ctf_config.json").expect("Error: Can't save JSON to `ctf_config.json`.");
+    ctf_config.save().expect("Error: Can't save JSON to `ctf_config.json`.");
     let ctf_config = web::Data::new(Mutex::new(ctf_config));
 
     let static_files = String::from("../frontend/build");

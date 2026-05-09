@@ -10,6 +10,7 @@ name: digger
 
 services:
   suricata:
+    image: ghcr.io/pwnzer0tt1/digger-suricata
     build: ./suricata
     volumes:
       - "./input_pcaps:/input_pcaps:rw"
@@ -28,6 +29,7 @@ services:
       - postgres
 
   webapp:
+    image: ghcr.io/pwnzer0tt1/digger-webapp
     build: ./webapp
     restart: always
     volumes:
@@ -48,6 +50,7 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust
       
   grafana:
+    image: ghcr.io/pwnzer0tt1/digger-grafana
     build: ./grafana
     restart: always
     ports:

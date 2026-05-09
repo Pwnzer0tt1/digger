@@ -21,7 +21,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME_PREFIX: ${{ github.repository_owner }}
+  IMAGE_NAME_BASE: ${{ github.repository_owner }}
 
 jobs:
   build-and-push:
@@ -37,10 +37,10 @@ jobs:
             context: .
           - dockerfile: ./grafana/Dockerfile
             image_name: digger-grafana
-            context: .
+            context: ./grafana
           - dockerfile: ./pcap_broker/Dockerfile
             image_name: digger-pcap-broker
-            context: .
+            context: ./pcap_broker
 
     permissions:
       contents: read
@@ -61,13 +61,13 @@ jobs:
 
       - name: Convert owner to lowercase
         id: lowercase_owner
-        run: echo "owner=$(echo ${{ env.IMAGE_NAME_PREFIX }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+        run: echo "owner=$(echo ${{ env.IMAGE_NAME_BASE }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ steps.lowercase_owner.outputs.owner }}/${{ matrix.image_name }}
+          images: ${{ env.REGISTRY }}/${{ steps.lowercase_owner.outputs.owner }}/digger-${{ matrix.image_name }}
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
@@ -83,8 +83,8 @@ jobs:
           push: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ steps.lowercase_owner.outputs.owner }}/${{ matrix.image_name }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ steps.lowercase_owner.outputs.owner }}/${{ matrix.image_name }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ steps.lowercase_owner.outputs.owner }}/digger-${{ matrix.image_name }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ steps.lowercase_owner.outputs.owner }}/digger-${{ matrix.image_name }}:buildcache,mode=max
 
   summary:
     runs-on: ubuntu-latest
@@ -93,7 +93,7 @@ jobs:
     steps:
       - name: Convert owner to lowercase
         id: lowercase_owner
-        run: echo "owner=$(echo ${{ env.IMAGE_NAME_PREFIX }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+        run: echo "owner=$(echo ${{ env.IMAGE_NAME_BASE }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
       - name: Create job summary
         run: |
           echo "## Docker Images Published" >> $GITHUB_STEP_SUMMARY

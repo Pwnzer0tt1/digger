@@ -31,10 +31,10 @@ jobs:
         include:
           - dockerfile: ./suricata/Dockerfile
             image_name: digger-suricata
-            context: .
+            context: ./suricata
           - dockerfile: ./webapp/Dockerfile
             image_name: digger-webapp
-            context: .
+            context: ./webapp
           - dockerfile: ./grafana/Dockerfile
             image_name: digger-grafana
             context: ./grafana

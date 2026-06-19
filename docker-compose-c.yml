@@ -35,6 +35,7 @@ services:
     volumes:
       - "./input_pcaps:/input_pcaps:ro" # remove to prevent users from downloading pcaps
       - "./suricata/output:/suricata/output:ro"
+      - "./config:/config:rw"
     ports:
       - 0.0.0.0:8000:8000
     depends_on:

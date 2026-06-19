@@ -16,6 +16,7 @@ services:
       - "./input_pcaps:/input_pcaps:rw"
       - "./suricata/rules:/suricata/rules:ro"
       - "./suricata/output:/suricata/output:rw"
+      - "./config:/config:rw"
 
     # Mode A: pcap replay mode (slower, for archives replay or rootless CTF)
     # Add `--pcap-file-continuous` to watch for new pcap in folder.

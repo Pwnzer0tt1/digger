@@ -1,0 +1,108 @@
+# Copyright (C) 2026 Pwnzer0tt1
+# Licensed under GPL-3.0
+
+name: digger
+
+services:
+  suricata-a:
+    image: ghcr.io/pwnzer0tt1/digger-suricata:latest
+    build: ./suricata
+    profiles: ["A"]
+    volumes:
+      - "./input_pcaps:/input_pcaps:rw"
+      - "./suricata/rules:/suricata/rules:ro"
+      - "./suricata/output:/suricata/output:rw"
+
+    # Mode A: pcap replay mode (slower, for archives replay or rootless CTF)
+    # Add `--pcap-file-continuous` to watch for new pcap in folder.
+    command: -r /input_pcaps --pcap-file-continuous
+    restart: unless-stopped
+    depends_on:
+      - postgres
+  
+  suricata-b:
+    image: ghcr.io/pwnzer0tt1/digger-suricata
+    build: ./suricata
+    profiles: ["B"]
+    volumes:
+      - "./input_pcaps:/input_pcaps:rw"
+      - "./suricata/rules:/suricata/rules:ro"
+      - "./suricata/output:/suricata/output:rw"
+      - "./config:/config:rw"
+
+    # Mode B: capture interface (fast, requires root on vulnbox and in Docker)
+    # Drastically reduces ingest delay, but requires to setup traffic mirroring
+    # between the vulnbox game interface and a team server.
+    command: -i tun5
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    network_mode: "host"
+    depends_on:
+      - postgres
+  
+  suricata-c:
+    image: ghcr.io/pwnzer0tt1/digger-suricata
+    build: ./suricata
+    profiles: ["C"]
+    volumes:
+      - "./input_pcaps:/input_pcaps:ro"
+      - "./suricata/rules:/suricata/rules:ro"
+      - "./suricata/output:/suricata/output:rw"
+      - "./config:/config:rw"
+
+    # Mode C: PCAP-over-IP (fast, requires root on vulnbox)
+    # Connects to a PCAP-over-IP server, such as pcap-broker to read PCAP data.
+    command: -r /dev/stdin
+    restart: unless-stopped
+    depends_on:
+      - pcap-broker
+      - postgres
+    environment:
+      - PCAP_OVER_IP=pcap-broker:4242
+
+  webapp:
+    image: ghcr.io/pwnzer0tt1/digger-webapp
+    build: ./webapp
+    restart: unless-stopped
+    volumes:
+      - "./input_pcaps:/input_pcaps:ro" # remove to prevent users from downloading pcaps
+      - "./suricata/output:/suricata/output:ro"
+      - "./config:/config:rw"
+    ports:
+      - 0.0.0.0:8000:8000
+    depends_on:
+      - postgres
+
+  pcap-broker:
+    image: ghcr.io/pwnzer0tt1/digger-pcap-broker
+    build: ./pcap_broker
+    profiles: ["C"]
+    restart: unless-stopped
+    volumes:
+      - "${KEY:-~/.ssh/id_ed25519}:/root/.ssh/identity:ro"
+    environment:
+      PCAP_COMMAND: ${PCAP_COMMAND}
+      LISTEN_ADDRESS: 0.0.0.0:4242
+
+  postgres:
+    image: postgres:18-alpine3.23
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      
+  grafana:
+    image: ghcr.io/pwnzer0tt1/digger-grafana
+    build: ./grafana
+    restart: unless-stopped
+    ports:
+      - "8001:3000"
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:

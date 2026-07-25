@@ -1,4 +1,5 @@
-import type { CtfConfig, Flow, FlowsListFilters } from "./schema";
+import { SvelteDate } from "svelte/reactivity";
+import type { CtfConfigType, Flow, FlowsListFilters } from "./schema";
 
 
 export const selectedFlow: { 
@@ -24,15 +25,15 @@ export const tickInfo: {
 export const flowsFilters: FlowsListFilters = $state({ tags_require: [], tags_deny: [] });
 
 export const ctfConfig: {
-    config: CtfConfig,
+    config: CtfConfigType,
     autoUpdate: boolean,
     refreshRate: number,
     ctfEnded: boolean,
     hideSideBar: boolean
 } = $state({
     config: {
-        start_date: new Date().toISOString(),
-        end_date: new Date().toISOString(),
+        start_date: new SvelteDate().toISOString(),
+        end_date: new SvelteDate().toISOString(),
         tick_length: 120,
         services: {}
     },

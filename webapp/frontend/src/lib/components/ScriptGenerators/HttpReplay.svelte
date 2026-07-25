@@ -13,17 +13,45 @@
 
         return "unknown";
     });
+    console.log(data);
+    const editor_cnt = `#!/usr/bin/env python3
+# Filename: replay-http-${serviceName}-${flowId}.py
+import json
+import logging
+import random
+import requests
+import sys
+      
+"""
+This file was generated from network capture towards ${data[0].hostname}
+Corresponding flow id: ${flowId}
+Service: ${serviceName}
+"""
+      
+# Setup logger to log requests
+logging.basicConfig(format='[%(levelname)s] %(message)s')
+logging.getLogger("urllib3.connectionpool").setLevel(logging.DEBUG)
+      
+s = requests.Session()
 
-    let userAgent = $derived.by(() => {
-        for (const header of data[0].request_headers) {
-            if (header.name.toLowerCase() == "user-agent") {
-                return header.value;
-            }
-        }
-
-        return "CHANGE ME";
-    });
-
+${data.map((req) => {
+    return `
+r = s.${(req.http_method || "").toLowerCase()}(
+    f"http://${req.hostname}${":" + req.http_port || ""}${req.url}",
+    ${req.http_method === "POST" ? `data=${req.rq_content},` : ""}
+    headers={
+        ${req.request_headers.map((h) => `"${h.name}": "${h.value}"`).join("\n        ")}
+    },
+    timeout=2, # prevent stall
+)
+      
+if r.status_code != ${req.status}:
+    logging.error(f"Request returned wrong status code {r.status_code}, expected ${req.status}")
+print(r.text, flush=True)
+`;
+}).join("\n")}
+`;
+    
     $effect(() => {
         const editor = ace.edit("http-replay-editor");
         editor.setOptions({
@@ -38,64 +66,4 @@
     });
 </script>
 
-<div id="http-replay-editor" class="rounded-bottom">
-#!/usr/bin/env python3
-# Filename: replay-{ serviceName }-{ flowId }.py
-import json
-import logging
-import random
-import requests
-import sys
-
-"""
-This file was generated from network capture towards { data[0].hostname }.
-Corresponding flow id: { flowId }
-Service: { serviceName }
-"""
-
-# Setup logger to log requests
-logging.basicConfig(format='[%(levelname)s] %(message)s')
-logging.getLogger("urllib3.connectionpool").setLevel(logging.DEBUG)
-
-# Load arguments
-# EXTRA is an array of the flagids for current service and team
-if len(sys.argv) &lt; 2:
-    print(f'Usage: &#123;sys.argv[0]&#125; &lt;target&gt; [flag_id]')
-    sys.exit(1)
-HOST = sys.argv[1]
-if len(sys.argv) &gt; 2:
-    EXTRA = json.loads(bytes.fromhex(sys.argv[2]).decode())
-else:
-    EXTRA = []
-
-
-# FIXME: You should identify if a flagid was used in the following
-# payload. If it is the case, then you should loop using EXTRA.
-#for flag_id in EXTRA:
-
-s = requests.Session()
-s.headers["User-Agent"] = "{userAgent}"
-
-{#each data as req, index (index)}
-# 
-
-r = s.{(req.http_method || "").toLowerCase()}(
-    f"http://&#123;HOST&#125;:{req.http_port || "80"}{req.url}",
-    {#if req.http_method === "POST"}
-    data={req.rq_content},
-    {/if}
-    headers=&#123;
-        {#each req.request_headers as header, index (index)}
-            {#if !["connection", "content-length", "host", "user-agent"].includes(header.name.toLowerCase())}
-        "{header.name}": "{header.value}",
-            {/if}
-        {/each}
-    &#125;,
-    timeout=2, # prevent stall
-)
-
-if r.status_code != {req.status}:
-    logging.error(f"Request returned wrong status code &#123;r.status_code&#125;, expected {req.status}")
-print(r.text, flush=True)
-{/each}
-</div>
+<div id="http-replay-editor" class="rounded-bottom">{editor_cnt}</div>

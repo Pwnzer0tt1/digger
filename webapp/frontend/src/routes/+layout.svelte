@@ -19,6 +19,7 @@
 	import { onMount } from "svelte";
 	import { Toaster } from "svelte-sonner";
 
+	import "$lib/global.css";
 
     let { children } = $props();
 
@@ -49,4 +50,3 @@
 <Toaster richColors closeButton position="top-center" expand={true} />
 
 {@render children()}
-

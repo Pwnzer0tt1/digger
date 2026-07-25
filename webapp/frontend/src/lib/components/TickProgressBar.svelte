@@ -3,7 +3,7 @@
 	import { onMount } from "svelte";
 
 
-    let startTs = $derived(Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000));
+    let startTs = $derived(Math.floor(Date.parse(ctfConfig.config.start_date) / 1000));
     let tickLength = $derived(ctfConfig.config.tick_length);
 
     let progressBarValue = $state(0);
@@ -12,7 +12,6 @@
 
     function updateProgressBar() {
         ctfConfig.ctfEnded = Date.now() > Date.parse(ctfConfig.config.end_date);
-
         const now = ctfConfig.ctfEnded ? Date.parse(ctfConfig.config.end_date) / 1000 : Date.now() / 1000;
         const currentTick = Math.floor((now - startTs) / tickLength);
         const tickStartTime = startTs + (currentTick * tickLength);
@@ -43,11 +42,12 @@
     onMount(() => {
         updateProgressBar();
 
-        setInterval(updateProgressBar, 1000);
+        const interval = setInterval(updateProgressBar, 1000);
+        return () => clearInterval(interval);
     });
 </script>
 
-<div class="card bg-body-tertiary p-2 shadow-lg w-100">
+<div class="card bg-body-tertiary p-2 w-100">
     <div class="hstack w-100 gap-2">
         <small class="fw-bold">Tick {tickInfo.tickNumber}</small>
         <div class="flex-grow-1">

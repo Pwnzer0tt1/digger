@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { Flow, Tags } from "$lib/schema";
+	import type { Flow, Tag } from "$lib/schema";
 	import { ctfConfig, pinnedFlows, selectedFlow } from "$lib/state.svelte";
 	import TagBadge from "./TagBadge.svelte";
 
-    let { index, flow, tags }: { index: number, flow: Flow, tags: Tags } = $props();
+    let { index, flow, tags }: { index: number, flow: Flow, tags: Tag[] } = $props();
     
     const delay = $derived((Number(flow.ts_end) - Number(flow.ts_start)) / 1000);
     const time = $derived(new Date(Number(flow.ts_start) / 1000).toISOString().split("T")[1]);

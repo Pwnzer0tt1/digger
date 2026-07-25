@@ -1,14 +1,14 @@
-import { sha256 } from "$lib/schema";
+import { Sha256 } from "$lib/zod";
 import type { ParamMatcher } from "@sveltejs/kit";
 
 
 export const match = ((param: string) => {
     try {
-        sha256.parse(param);
+        Sha256.parse(param);
         // TODO: Check if sha256 exists in the filedata table
         return true;
     }
-    catch (e) {
+    catch {
         return false;
     }
 }) satisfies ParamMatcher;

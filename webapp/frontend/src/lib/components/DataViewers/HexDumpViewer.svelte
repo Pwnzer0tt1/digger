@@ -1,6 +1,19 @@
 <script lang="ts">
-	let { sha256, blob }: { sha256: string, blob: Uint8Array } = $props();
+	let { blob }: { blob: Uint8Array } = $props();
 
+	const id = "h" + genID(15);
+	
+	function genID(length: number) {
+        let result = '';
+        let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let charactersLength = characters.length;
+        for ( var i = 0; i < length; i++ ) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        
+        return result;
+	}
+	
     let offset: string[] = [];
     let hex: string[] = [];
     let text: string[] = [];
@@ -29,8 +42,8 @@
 
     function overCell(e: any) {
         const elIndex = Number(e.currentTarget.getAttribute("data-index"));
-        const hexCells = document.getElementsByClassName(`${sha256}-hex`) as HTMLCollectionOf<HTMLDivElement>;
-        const textCells = document.getElementsByClassName(`${sha256}-text`) as HTMLCollectionOf<HTMLDivElement>;
+        const hexCells = document.getElementsByClassName(`${id}-hex`) as HTMLCollectionOf<HTMLDivElement>;
+        const textCells = document.getElementsByClassName(`${id}-text`) as HTMLCollectionOf<HTMLDivElement>;
 
         for (let index = 0; index < blob.length; index++) {
             let hexEl = hexCells.item(index);
@@ -90,8 +103,8 @@
 
     function selectCell(e: any) {
         let elIndex = Number(e.currentTarget.getAttribute("data-index"));
-        let hexCell = (document.getElementsByClassName(`${sha256}-hex`) as HTMLCollectionOf<HTMLDivElement>).item(elIndex);
-        let textCell = (document.getElementsByClassName(`${sha256}-text`) as HTMLCollectionOf<HTMLDivElement>).item(elIndex);
+        let hexCell = (document.getElementsByClassName(`${id}-hex`) as HTMLCollectionOf<HTMLDivElement>).item(elIndex);
+        let textCell = (document.getElementsByClassName(`${id}-text`) as HTMLCollectionOf<HTMLDivElement>).item(elIndex);
 
         if (hexCell) {
             hexCell.style.backgroundColor = "#066bd6";
@@ -163,14 +176,14 @@
     <div style="flex: 1 0 40%;" oncopy={copyBytes}>
         <div class="d-flex align-content-start flex-wrap">
             {#each hex as h, index (index)}
-                <div data-index={index} onclick={selectCell} onmouseover={overCell} class="{sha256}-hex hex-cell text-center" role="none" onfocus={(e) => {}}>{h}</div>
+                <div data-index={index} onclick={selectCell} onmouseover={overCell} class="{id}-hex hex-cell text-center" role="none" onfocus={(e) => {}}>{h}</div>
             {/each}
         </div>
     </div>
     <div style="flex: 1 0 40%;" oncopy={copyBytes}>
         <div class="d-flex align-content-start flex-wrap">
             {#each text as t, index (index)}
-                <div data-index={index} onclick={selectCell} onmouseover={overCell} class="{sha256}-text text-cell text-center" role="none" onfocus={(e) => {}}>{t}</div>
+                <div data-index={index} onclick={selectCell} onmouseover={overCell} class="{id}-text text-cell text-center" role="none" onfocus={(e) => {}}>{t}</div>
             {/each}
         </div>
     </div>

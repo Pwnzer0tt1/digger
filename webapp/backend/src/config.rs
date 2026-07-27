@@ -5,7 +5,7 @@ use chrono::Duration;
 use serde::{Deserialize, Serialize};
 
 
-const CONFIG_PATH: &str = "./config/ctf_config.json";
+const CONFIG_PATH: &str = "/config/ctf_config.json";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NewService {

@@ -64,6 +64,7 @@ services:
   webapp:
     image: ghcr.io/pwnzer0tt1/digger-webapp
     build: ./webapp
+    profiles: ["prod"]
     restart: unless-stopped
     volumes:
       - "./input_pcaps:/input_pcaps:ro" # remove to prevent users from downloading pcaps
@@ -73,6 +74,46 @@ services:
       - 0.0.0.0:8000:8000
     depends_on:
       - postgres
+
+  webapp-backend-dev:
+    build:
+      context: ./webapp
+      target: backend-dev
+    profiles: ["dev"]
+    restart: unless-stopped
+    volumes:
+      - "./input_pcaps:/input_pcaps:ro" # remove to prevent users from downloading pcaps
+      - "./suricata/output:/suricata/output:ro"
+      - "./config:/config:rw"
+      - ./webapp/backend/src:/backend/src:ro
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+
+  webapp-frontend-dev:
+    build:
+      context: ./webapp
+      target: frontend-dev
+    profiles: ["dev"]
+    restart: unless-stopped
+    volumes:
+      - ./webapp/frontend/src:/frontend/src:ro
+      - ./webapp/frontend/static:/frontend/static:ro
+      - ./webapp/frontend/package.json:/frontend/package.json:ro
+      - ./webapp/frontend/svelte.config.js:/frontend/svelte.config.js:ro
+      - ./webapp/frontend/tsconfig.json:/frontend/tsconfig.json:ro
+      - ./webapp/frontend/vite.config.ts:/frontend/vite.config.ts:ro
+      - ./webapp/frontend/eslint.config.js:/frontend/eslint.config.js:ro
+      - ./webapp/frontend/.prettierignore:/frontend/.prettierignore:ro
+      - ./webapp/frontend/.prettierrc:/frontend/.prettierrc:ro
+      - ./webapp/frontend/.npmrc:/frontend/.npmrc:ro
+    ports:
+      - "5173:5173"
+    depends_on:
+      - webapp-backend-dev
+    environment:
+      BACKEND_URL: http://webapp-backend-dev:8000
 
   pcap-broker:
     image: ghcr.io/pwnzer0tt1/digger-pcap-broker

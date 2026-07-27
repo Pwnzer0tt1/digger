@@ -4,11 +4,11 @@
 # Licensed under GPL-3.0
 
 import argparse
+import ipaddress
 import os
 import shutil
 import subprocess
 import sys
-import ipaddress
 
 SURICATA_RULES = "./suricata/rules"
 SURICATA_OUTPUT = "./suricata/output"
@@ -22,7 +22,11 @@ def check_compose_profiles() -> bool:
     if os.path.exists("./.env"):
         with open("./.env", "r") as f:
             name, value = f.readline().strip().split("=")
-            if name == "COMPOSE_PROFILES" and value in "ABC":
+            if name == "COMPOSE_PROFILES":
+                profiles = value.split(",")
+                for p in profiles:
+                    if not p in ["A", "B", "C", "dev", "prod"]:
+                        return False
                 return True
     return False
     
@@ -179,19 +183,17 @@ def prompt_for_rules():
             if rule == "others":
                 rule = None
             else:
-                with open(f"./suricata/examples_rules/flags/{flags_rules[rule]}.rules", "r") as src:
-                    with open("./suricata/rules/suricata.rules", "a") as dst:
-                        dst.write("\n")
-                        dst.write(src.read())
+                with open(f"./suricata/examples_rules/flags/{flags_rules[rule]}.rules", "r") as src, open("./suricata/rules/suricata.rules", "a") as dst:
+                    dst.write("\n")
+                    dst.write(src.read())
             break
         else:
             print_error("Invalid input.")
 
     def create_suricata_rules():
-        with open("./suricata/examples_rules/suricata.rules", "r") as src:
-            with open("./suricata/rules/suricata.rules", "a") as dst:
-                dst.write("\n")
-                dst.write(src.read())
+        with open("./suricata/examples_rules/suricata.rules", "r") as src, open("./suricata/rules/suricata.rules", "a") as dst:
+            dst.write("\n")
+            dst.write(src.read())
     prompt_for_yn("Do want to use default rules for Attack & Defence CTFs?", create_suricata_rules, None, default_r="y")
     
     
@@ -248,9 +250,8 @@ def compose_down() -> bool:
     print_progress("Stopping running containers...")
 
     if not check_compose_profiles():
-        mode = prompt_for_mode()
-        with open("./.env", "w") as f:
-            f.write(f"COMPOSE_PROFILES={mode}")
+        print_error("Can't find COMPOSE_PROFILES env variable.")
+        sys.exit(1)
 
     cmd = ["docker", "compose", "down", "--remove-orphans"]
     print_progress(f"Executing: {' '.join(cmd)}")
@@ -272,9 +273,8 @@ def compose_stop():
     print_progress("Stopping running containers...")
 
     if not check_compose_profiles():
-        mode = prompt_for_mode()
-        with open("./.env", "w") as f:
-            f.write(f"COMPOSE_PROFILES={mode}")
+        print_error("Can't find COMPOSE_PROFILES env variable.")
+        sys.exit(1)
 
     cmd = ["docker", "compose", "stop"]
     print_progress(f"Executing: {' '.join(cmd)}")
@@ -295,9 +295,8 @@ def compose_up(build=False):
     """Start containers defined in the specified docker-compose file"""
 
     if not check_compose_profiles():
-        mode = prompt_for_mode()
-        with open("./.env", "w") as f:
-            f.write(f"COMPOSE_PROFILES={mode}")
+        print_error("Can't find COMPOSE_PROFILES env variable.")
+        sys.exit(1)
 
     cmd = ["docker", "compose", "up", "-d"]
     if build:
@@ -415,6 +414,10 @@ def handle_start_command(args):
 
     with open("./.env", "w") as f:
         f.write(f"COMPOSE_PROFILES={mode}")
+        if args.dev:
+            f.write(",dev")
+        else:
+            f.write(",prod")
 
     # Stop existing containers
     compose_down()
@@ -539,9 +542,8 @@ def handle_status_command():
     print_progress("Checking Digger status...")
 
     if not check_compose_profiles():
-        mode = prompt_for_mode()
-        with open("./.env", "w") as f:
-            f.write(f"COMPOSE_PROFILES={mode}")
+        print_error("Can't find COMPOSE_PROFILES env variable.")
+        sys.exit(1)
 
     # Always show container status
     print_info("Container Status:")
@@ -559,9 +561,8 @@ def handle_logs_command(args):
     print_progress("Following container logs...")
 
     if not check_compose_profiles():
-        mode = prompt_for_mode()
-        with open("./.env", "w") as f:
-            f.write(f"COMPOSE_PROFILES={mode}")
+        print_error("Can't find COMPOSE_PROFILES env variable.")
+        sys.exit(1)
 
     # Build logs command
     cmd = ["docker", "compose", "logs", "-f"]
@@ -572,7 +573,7 @@ def handle_logs_command(args):
 
     print_progress(f"Executing: {' '.join(cmd)}")
     try:
-        result = subprocess.run(cmd)
+        result = subprocess.run(cmd, check=False)
         sys.exit(result.returncode)
     except subprocess.CalledProcessError as e:
         print_error(f"Failed to follow logs: {e}")
@@ -625,7 +626,10 @@ def create_parser():
     mode_group.add_argument(
         "--mode-c", action="store_true", help="Start in mode C (PCAP-over-IP)"
     )
-
+    parser_start.add_argument(
+        "--dev", action="store_true", help="Start Digger using containers in dev mode"
+    )
+    
     parser_start.add_argument(
         "--build", action="store_true", help="Build images instead of pulling from GHCR"
     )

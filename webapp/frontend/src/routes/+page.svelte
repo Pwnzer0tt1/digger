@@ -2,6 +2,7 @@
 	import FlowDisplay from '$lib/components/FlowDisplay.svelte';
 	import ServicesManager from '$lib/components/ServicesManager.svelte';
 	import Settings from '$lib/components/Settings.svelte';
+	import WiregasmSettings from '$lib/components/Wiregasm/WiregasmSettings.svelte';
 	import SideBar from '$lib/components/SideBar.svelte';
 	import TickProgressBar from '$lib/components/TickProgressBar.svelte';
 	import WelcomePanel from '$lib/components/WelcomePanel.svelte';
@@ -117,6 +118,8 @@
                 <ServicesManager />
             {:else if selectedPanel.view === "Settings"}
                 <Settings formData={data.settingsForm} />
+            {:else if selectedPanel.view === "WiregasmSettings"}
+                <WiregasmSettings />
             {:else}
                 {#if selectedFlow.flow}
                     <!-- Flow display -->
@@ -140,6 +143,7 @@
         <div class="btn-group" role="group" aria-label="Basic example">
             <a class="btn btn-primary" title="Grafana" href={grafanaURL} target="_blank" aria-label="Grafana"><i class="bi bi-graph-up"></i></a>
             <button onclick={() => selectedPanel.view = "Settings"} type="button" class="btn btn-primary" title="Settings" aria-label="Settings"><i class="bi bi-gear-fill"></i></button>
+            <button onclick={() => selectedPanel.view = "WiregasmSettings"} type="button" class="btn btn-secondary" title="Wiregasm Dissector Settings" aria-label="Wiregasm settings"><i class="bi bi-shield-fill-check"></i></button>
         </div>
     </div>
 </div>

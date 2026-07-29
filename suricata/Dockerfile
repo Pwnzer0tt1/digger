@@ -7,7 +7,7 @@
 # Licensed under GPL-3.0
 
 # Plugins build stage
-FROM rust:1.93-alpine3.23 AS builder
+FROM rust:1.97-alpine3.23 AS builder
 
 RUN apk update
 RUN apk add --no-cache gcc musl-dev pkgconf pcre2-dev make jansson-dev libpcap-dev libcap-ng-dev libunwind-dev lz4-dev file-dev rust cargo

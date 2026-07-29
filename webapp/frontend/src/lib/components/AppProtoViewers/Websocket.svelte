@@ -1,11 +1,12 @@
 <script lang="ts">
-	import type { AppDataFileinfo, WebsocketMetadata } from "$lib/schema";
+	import type { WebsocketEvent } from "$lib/EVE";
+	import type { AppDataFileinfo } from "$lib/schema";
 	import FlowAppFileView from "../FlowAppFileView.svelte";
 
     let { appDataActiveView, fileinfos, flow_app_proto }: {
         appDataActiveView: string,
         fileinfos: AppDataFileinfo[],
-        flow_app_proto: WebsocketMetadata[]
+        flow_app_proto: WebsocketEvent[]
     }  = $props();
 </script>
 

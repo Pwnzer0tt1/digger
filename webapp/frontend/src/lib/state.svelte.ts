@@ -1,12 +1,12 @@
 import type { CtfConfig, Flow, FlowsListFilters } from "./schema";
 import type { TypedWorker } from "$lib/components/Wiregasm/types";
+import { SvelteDate } from "svelte/reactivity";
 
 export const wiregasmState: {
     worker: TypedWorker | null,
 } = $state({
     worker: null,
 });
-
 
 export const selectedFlow: { 
     flow: Flow | undefined,
@@ -31,15 +31,15 @@ export const tickInfo: {
 export const flowsFilters: FlowsListFilters = $state({ tags_require: [], tags_deny: [] });
 
 export const ctfConfig: {
-    config: CtfConfig,
+    config: CtfConfigType,
     autoUpdate: boolean,
     refreshRate: number,
     ctfEnded: boolean,
     hideSideBar: boolean
 } = $state({
     config: {
-        start_date: new Date().toISOString(),
-        end_date: new Date().toISOString(),
+        start_date: new SvelteDate().toISOString(),
+        end_date: new SvelteDate().toISOString(),
         tick_length: 120,
         services: {}
     },

@@ -1,12 +1,14 @@
 <script lang="ts">
-	import type { AlertExtraData, Fileinfo, Flow, HTTPMetadata } from "$lib/schema";
+	import type { FlowInfoType } from "$lib/schema";
 	import { ctfConfig, selectedFlow } from "$lib/state.svelte";
 	import HexDumpViewer from "./DataViewers/HexDumpViewer.svelte";
 	import HttpReplay from "./ScriptGenerators/HttpReplay.svelte";
 	import RawReplay from "./ScriptGenerators/RawReplay.svelte";
 	import HttpFlow from "./AppProtoViewers/HTTP.svelte";
 	import WebsocketFlow from "./AppProtoViewers/Websocket.svelte";
-    import WiregasmModal from "./Wiregasm/WiregasmModal.svelte";
+  import WiregasmModal from "./Wiregasm/WiregasmModal.svelte";
+	import type { AnomalyEvent, EVESchema, HTTPEvent, WebsocketEvent } from "$lib/EVE";
+    
 
     let appDataActiveView: "render" | "utf8" | "hex" = $state("render");
     let rawDataActiveView: "utf8" | "hex" = $state("utf8");
@@ -55,7 +57,7 @@
     let rawFlowData = $derived.by(async () => {
         let res = await fetch(`/api/flow/${selectedFlow.flow?.id}/raw`);
         let json: {
-            server_to_client: string;
+            server_to_client: number,
             blob: string;
         }[] = await res.json();
 
@@ -65,42 +67,17 @@
     });
 
     let flowData = $derived.by(async () => {
-        let res = await fetch(`/api/flow/${selectedFlow.flow?.id}`);
-        let json: {
-            flow: Flow,
-            fileinfo?: Fileinfo[],
-            alerts?: {
-                data: AlertExtraData,
-                color: string
-            }[],
-            anomaly: {
-                extra_data: any
-            }[],
-            http?: HTTPMetadata[],
-            http2?: any,
-            quic?: any,
-            websocket?: any,
-            ftp?: any,
-            tls?: any,
-            tftp?: any,
-            nfs?: any,
-            smb?: any,
-            ssh?: any,
-            rdp?: any,
-            rfb?: any,
-            [key: string]: any
-        } = await res.json();
+        const res = await fetch(`/api/flow/${selectedFlow.flow?.id}`);
+        const json: FlowInfoType = await res.json();
 
-        let flowData = JSON.parse(new TextDecoder().decode(Uint8Array.from(json.flow.data)));
-        json.flow.data = flowData;
-        const dateStart = flowData.flow.start.split("T").join(", ");
-        const dateEnd = flowData.flow.end.split("T").join(", ");
-        const start_ts = Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000);
+        const eve: EVESchema = JSON.parse(new TextDecoder().decode(Uint8Array.from(json.flow.data)));
+
+        const dateStart = eve.flow?.start?.split("T").join(", ");
+        const dateEnd = eve.flow?.end?.split("T").join(", ");
+        const start_ts = Math.floor(Date.parse(ctfConfig.config.start_date) / 1000);
         const tick = ((Number(json.flow.ts_start) / 1000000 - start_ts) / ctfConfig.config.tick_length).toFixed(3);
 
-        let flowAppProto: {
-            [key: string]: any
-        } = {};
+        let flowAppProto: Record<string, unknown[] | HTTPEvent[] | WebsocketEvent[]> = {};
         let fileinfos: {
             [key: string]: {
                 ext: string,
@@ -112,6 +89,7 @@
                 tx_id: number
             }[]
         } = {};
+        let anomalies: AnomalyEvent[] = [];
         
         if (json.flow.app_proto && json.flow.app_proto !== "failed") {
             for (const e of json.events) {
@@ -143,34 +121,27 @@
                     });
                 }
                 else if (e.event_type === "anomaly") {
-                    //const d = JSON.parse(new TextDecoder().decode(Uint8Array.from(e.data))).anomaly;
-                    //console.log(d);
+                    const d = JSON.parse(new TextDecoder().decode(Uint8Array.from(e.data))).anomaly;
+                    anomalies.push(d);
                 }
             }
         }
-
+        
         return {
             flow: json.flow,
             dateStart,
             dateEnd,
             tick,
             alerts: json.alerts,
-            anomalies: json.anomaly,
+            anomalies,
             flowAppProto,
-            fileinfos
+            fileinfos,
+            event: eve
         };
     });
 
-    function changeAppDataView(event: any) {
-        appDataActiveView = event.currentTarget.value;
-    }
-
-    function changeRawDataView(event: any) {
-        rawDataActiveView = event.currentTarget.value;
-    }
-
     let showWiregasm = $state(false);
-
+  
     let editorEl: HTMLDivElement | null = $state(null);
     let editor: any;
     $effect(() => {
@@ -216,15 +187,15 @@
     <div class="vstack gap-2">
         <!-- Flow card -->
         <div class="hstack gap-2 align-items-stretch">
-            <div class="card p-2 border-secondary">
-                <p class="my-0">Tick {flowData.tick}</p>
+            <div class="card p-3 border-secondary">
+                <p class="my-0 text-primary">Tick {flowData.tick}</p>
                 <p class="my-0">From {flowData.dateStart}</p>
                 <p class="my-0">to {flowData.dateEnd}</p>
             </div>
-            <div class="flex-grow-1 card p-2 border-secondary">
-                <p class="my-0">{flowData.flow.proto} flow from {flowData.flow.src_ipport} to {flowData.flow.dest_ipport}</p>
-                <p class="my-0"><i class="bi bi-arrow-right"></i> {flowData.flow.data.flow.pkts_toserver} packets ({flowData.flow.data.flow.bytes_toserver} bytes)</p>
-                <p class="my-0"><i class="bi bi-arrow-left"></i> {flowData.flow.data.flow.pkts_toclient} packets ({flowData.flow.data.flow.bytes_toclient} bytes)</p>
+            <div class="flex-grow-1 card p-3 border-secondary">
+                <p class="my-0">Flow ID <span class="text-warning">{flowData.flow.id}</span> {flowData.flow.proto} flow from {flowData.flow.src_ipport} to {flowData.flow.dest_ipport}</p>
+                <p class="my-0 text-danger"><i class="bi bi-arrow-right"></i> {flowData.event.flow?.pkts_toserver} packets ({flowData.event.flow?.bytes_toserver} bytes)</p>
+                <p class="my-0 text-success"><i class="bi bi-arrow-left"></i> {flowData.event.flow?.pkts_toclient} packets ({flowData.event.flow?.bytes_toclient} bytes)</p>
             </div>
             <div class="d-flex align-items-stretch">
                 <div class="btn-group-vertical gap-2" role="group" aria-label="Vertical button group">
@@ -268,13 +239,13 @@
                     <div class="accordion-header hstack gap-3 bg-body-tertiary p-1 px-3 rounded">
                         <h5 class="mb-0">{flowData.flow.app_proto}</h5>
                         <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
-                            <input value="render" onchange={changeAppDataView} type="radio" class="btn-check" name="appviewbtnradio" id="app-data-btn-render" autocomplete="off" checked={appDataActiveView === "render"}>
+                            <input onchange={() => appDataActiveView = "render"} type="radio" class="btn-check" name="appviewbtnradio" id="app-data-btn-render" autocomplete="off" checked={appDataActiveView === "render"}>
                             <label class="btn btn-sm btn-outline-primary" for="app-data-btn-render">Render</label>
 
-                            <input value="utf8" onchange={changeAppDataView} type="radio" class="btn-check" name="appviewbtnradio" id="app-data-btn-utf8" autocomplete="off"  checked={appDataActiveView === "utf8"}>
+                            <input onchange={() => appDataActiveView = "utf8"} type="radio" class="btn-check" name="appviewbtnradio" id="app-data-btn-utf8" autocomplete="off"  checked={appDataActiveView === "utf8"}>
                             <label class="btn btn-sm btn-outline-primary" for="app-data-btn-utf8">UTF-8</label>
 
-                            <input value="hex" onchange={changeAppDataView} type="radio" class="btn-check" name="appviewbtnradio" id="app-data-btn-hex" autocomplete="off"  checked={appDataActiveView === "hex"}>
+                            <input onchange={() => appDataActiveView = "hex"} type="radio" class="btn-check" name="appviewbtnradio" id="app-data-btn-hex" autocomplete="off"  checked={appDataActiveView === "hex"}>
                             <label class="btn btn-sm btn-outline-primary" for="app-data-btn-hex">Hex</label>
                         </div>
                         <button class="ms-auto btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#app-replay-script" aria-label="Generate script">Generate script</button>
@@ -285,9 +256,9 @@
                             <div class="vstack gap-3">
                                 {#each Object.entries(flowData.flowAppProto) as  [app_proto, flow_app_proto] (app_proto)}
                                     {#if app_proto === "http" || app_proto === "http2"}
-                                        <HttpFlow appDataActiveView={appDataActiveView} destPort={flowData.flow.dest_port} fileinfos={flowData.fileinfos[app_proto]} app_proto={app_proto} flow_app_proto={flow_app_proto} />
+                                        <HttpFlow appDataActiveView={appDataActiveView} destPort={flowData.flow.dest_port} fileinfos={flowData.fileinfos[app_proto]} app_proto={app_proto} flow_app_proto={flow_app_proto as HTTPEvent[]} />
                                     {:else if app_proto === "websocket"}
-                                        <WebsocketFlow appDataActiveView={appDataActiveView} fileinfos={flowData.fileinfos[app_proto]} flow_app_proto={flow_app_proto} />
+                                        <WebsocketFlow appDataActiveView={appDataActiveView} fileinfos={flowData.fileinfos[app_proto]} flow_app_proto={flow_app_proto as WebsocketEvent[]} />
                                     {:else}
                                         {#each flow_app_proto as data, index (index)}
                                             <div>
@@ -313,10 +284,10 @@
                         <div class="accordion-header hstack gap-3 bg-body-tertiary p-1 px-3 rounded">
                             <h5 class="mb-0">Raw data {flowData.flow.proto}</h5>
                             <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
-                                <input value="utf8" onchange={changeRawDataView} type="radio" class="btn-check" name="rawviewbtnradio" id="raw-data-btn-utf8" autocomplete="off" checked={rawDataActiveView === "utf8"}>
+                                <input onchange={() => rawDataActiveView = "utf8"} type="radio" class="btn-check" name="rawviewbtnradio" id="raw-data-btn-utf8" autocomplete="off" checked={rawDataActiveView === "utf8"}>
                                 <label class="btn btn-sm btn-outline-primary" for="raw-data-btn-utf8">UTF-8</label>
 
-                                <input value="hex" onchange={changeRawDataView} type="radio" class="btn-check" name="rawviewbtnradio" id="raw-data-btn-hex" autocomplete="off" checked={rawDataActiveView === "hex"}>
+                                <input onchange={() => rawDataActiveView = "hex"} type="radio" class="btn-check" name="rawviewbtnradio" id="raw-data-btn-hex" autocomplete="off" checked={rawDataActiveView === "hex"}>
                                 <label class="btn btn-sm btn-outline-primary" for="raw-data-btn-hex">Hex</label>
                             </div>
                             <button class="ms-auto btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#raw-replay-script" aria-label="Generate script">Generate script</button>
@@ -327,9 +298,9 @@
                                 {#each rawFlowData.raw as chunk, index (index)}
                                     {@const byteArray = Uint8Array.from(chunk.blob)}
                                     {#if rawDataActiveView === "utf8"}
-                                        <pre class="rounded p-2 {chunk.server_to_client === 0 ? "bg-danger" : ""}{chunk.server_to_client === 1 ? "bg-success" : ""}">{new TextDecoder().decode(byteArray)}</pre>
+                                        <pre class="rounded border border-5 {chunk.server_to_client === 0 ? "border-danger" : ""}{chunk.server_to_client === 1 ? "border-success" : ""} p-2">{new TextDecoder().decode(byteArray)}</pre>
                                     {:else if rawDataActiveView === "hex"}
-                                        <pre class="rounded p-2 {chunk.server_to_client === 0 ? "bg-danger" : ""}{chunk.server_to_client === 1 ? "bg-success" : ""}"><HexDumpViewer sha256={index} blob={byteArray} /></pre>
+                                        <pre class="rounded p-2 {chunk.server_to_client === 0 ? "bg-danger" : ""}{chunk.server_to_client === 1 ? "bg-success" : ""}"><HexDumpViewer blob={byteArray} /></pre>
                                     {/if}
                                 {/each}
                             </div>

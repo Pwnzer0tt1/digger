@@ -20,6 +20,7 @@
 	import { Toaster } from "svelte-sonner";
 	import { wiregasmState } from "$lib/state.svelte";
 
+	import "$lib/global.css";
 
     let { children } = $props();
 
@@ -56,4 +57,3 @@
 <Toaster richColors closeButton position="top-center" expand={true} />
 
 {@render children()}
-

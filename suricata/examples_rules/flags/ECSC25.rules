@@ -1,0 +1,6 @@
+alert ip any any -> any any (msg: "ECSC (ECSC 2025) flag sent to client"; flow:to_client; content: "ECSC{"; pcre: "/(ECSC\{[A-Za-z0-9_-]{32}\})/, flow:match"; metadata: tag FLAG OUT, color danger; sid: 1;)
+alert ip any any -> any any (msg: "ECSC (ECSC 2025) flag sent to client"; flow:to_client; file.data; content: "ECSC{"; pcre: "/(ECSC\{[A-Za-z0-9_-]{32}\})/, flow:match"; metadata: tag FLAG OUT, color danger; sid: 2;)
+alert ip any any -> any any (msg: "ECSC (ECSC 2025) flag sent to client (base64)"; flow:to_client; content: "RUNTQ"; metadata: tag FLAG OUT B64, color danger; sid: 3;)
+alert ip any any -> any any (msg: "ECSC (ECSC 2025) flag sent to client (base64)"; flow:to_client; file.data; content: "RUNTQ"; metadata: tag FLAG OUT B64, color danger; sid: 4;)
+alert ip any any -> any any (msg: "ECSC (ECSC 2025) flag placed in our services (probably checkers)"; flow:to_server; content: "ECSC{"; pcre: "/(ECSC\{[A-Za-z0-9_-]{32}\})/, flow:match"; metadata: tag FLAG IN, color success; sid: 5;)
+alert ip any any -> any any (msg: "ECSC (ECSC 2025) flag placed in our services (URL encoded, probably checkers)"; flow:to_server; content: "ECSC%7"; pcre: "/(ECSC%7[bB][A-Za-z0-9_-]{32}%7[dD])/, flow:match"; metadata: tag FLAG IN, color success; sid: 6;)

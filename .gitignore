@@ -1,10 +1,12 @@
 # Copyright (C) 2024  ANSSI
 # SPDX-License-Identifier: CC0-1.0
-input_pcaps/*
 
-# Configurazione
-.env
-services_config.json
+input_pcaps/*
+!input_pcaps/.gitkeep
+
+# Configuration
+config/*
+!config/.gitkeep
 
 # Python
 **/__pycache__
@@ -14,3 +16,5 @@ services_config.json
 .idea
 .vscode
 .venv
+
+.env

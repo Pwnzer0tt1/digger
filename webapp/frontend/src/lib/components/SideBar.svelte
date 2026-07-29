@@ -8,11 +8,6 @@
         appProto: string[]
     } = $props();
     
-    let innerHeight = $state(0);
-    let sideBarHeight = $state(0);
-    let autoUpdateBtnHeight = $state(0);
-    let settingsHeight = $state(0);
-    let flowsListHeight = $derived(sideBarHeight - autoUpdateBtnHeight - settingsHeight);
     let tagsDict = $derived.by(() => {
         let d: {
             [key: string]: string
@@ -53,8 +48,8 @@
             filterTick = undefined;
             if (minFilterTick && maxFilterTick) {
                 flowsFilters.tick_op = "Between" + betweenGreater + betweenLesser;
-                flowsFilters.min_ts = String(Math.floor((minFilterTick * ctfConfig.config.tick_length + Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000)) * 1000000));
-                flowsFilters.max_ts = String(Math.floor((maxFilterTick * ctfConfig.config.tick_length + Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000)) * 1000000));
+                flowsFilters.min_ts = String(Math.floor((minFilterTick * ctfConfig.config.tick_length + Math.floor(Date.parse(ctfConfig.config.start_date) / 1000)) * 1000000));
+                flowsFilters.max_ts = String(Math.floor((maxFilterTick * ctfConfig.config.tick_length + Math.floor(Date.parse(ctfConfig.config.start_date) / 1000)) * 1000000));
             }
             else {
                 flowsFilters.min_ts = undefined;
@@ -68,7 +63,7 @@
             maxFilterTick = undefined;
             if (filterTick) {
                 flowsFilters.tick_op = tickSearchMode;
-                flowsFilters.ts = String(Math.floor((filterTick * ctfConfig.config.tick_length + Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000)) * 1000000));
+                flowsFilters.ts = String(Math.floor((filterTick * ctfConfig.config.tick_length + Math.floor(Date.parse(ctfConfig.config.start_date) / 1000)) * 1000000));
             }
             else {
                 flowsFilters.ts = undefined;
@@ -94,7 +89,7 @@
         }
     }
 
-    function selectAvailableTag(e: any) {
+    function selectAvailableTag(e: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }) {
         if (shiftPressed) {
             flowsFilters.tags_deny.push(e.currentTarget.value);
         }
@@ -102,7 +97,7 @@
             flowsFilters.tags_require.push(e.currentTarget.value);
         }
     }
-    function selectRequiredTag(e: any) {
+    function selectRequiredTag(e: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }) {
         if (shiftPressed) {
             flowsFilters.tags_deny.push(e.currentTarget.value);
         }
@@ -110,7 +105,7 @@
         const index = flowsFilters.tags_require.indexOf(e.currentTarget.value);
         flowsFilters.tags_require.splice(index, 1);
     }
-    function selectDeniedTag(e: any) {
+    function selectDeniedTag(e: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }) {
         if (shiftPressed) {
             flowsFilters.tags_require.push(e.currentTarget.value);
         }
@@ -130,12 +125,12 @@
     }
 </script>
 
-<svelte:window bind:innerHeight onkeydown={shiftChange} onkeyup={shiftChange} />
+<svelte:window onkeydown={shiftChange} onkeyup={shiftChange} />
 
-<div bind:clientHeight={sideBarHeight} class="vstack gap-2 h-100">
-    <button bind:clientHeight={autoUpdateBtnHeight} onclick={() => ctfConfig.autoUpdate = !ctfConfig.autoUpdate} title="Refresh flow list" class="btn btn-{ctfConfig.autoUpdate ? "success" : "danger"} shadow-lg">Auto-Update: {ctfConfig.autoUpdate ? "ON" : "OFF"}</button>
-    <div bind:clientHeight={settingsHeight} class="hstack gap-2">
-        <select bind:value={selectedService} onchange={changeSelectedService} class="form-select shadow-lg">
+<div class="vstack gap-2 h-100">
+    <button onclick={() => ctfConfig.autoUpdate = !ctfConfig.autoUpdate} title="Refresh flow list" class="btn btn-{ctfConfig.autoUpdate ? "success" : "danger"} flex-shrink-0">Auto-Update: {ctfConfig.autoUpdate ? "ON" : "OFF"}</button>
+    <div class="hstack gap-2 flex-shrink-0">
+        <select bind:value={selectedService} onchange={changeSelectedService} class="form-select">
             <option value="" selected>All flows</option>
             <option value="!">Flows from unknown services</option>
             {#each Object.entries(ctfConfig.config.services) as service (service[0])}
@@ -149,11 +144,11 @@
                 </optgroup>
             {/each}
         </select>
-        <button onclick={() => selectedPanel.view = "ServicesManager"} class="btn btn-secondary shadow-lg" title="Services manager" aria-label="Service settings">
+        <button onclick={() => selectedPanel.view = "ServicesManager"} class="btn btn-secondary" title="Services manager" aria-label="Service settings">
             <i class="bi bi-boxes"></i>
         </button>
         <div class="dropend">
-            <button class="btn btn-secondary shadow-lg text-nowrap" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" title="Flows filters" aria-expanded="false" aria-label="Dropdown filter">
+            <button class="btn btn-secondary text-nowrap" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" title="Flows filters" aria-expanded="false" aria-label="Dropdown filter">
                 <i class="bi bi-funnel-fill"></i>
                 <i class="bi bi-chevron-right"></i>
             </button>
@@ -237,7 +232,7 @@
             </div>
         </div>
     </div>
-    <div class="card p-1 shadow-lg" style="height: {flowsListHeight}px;">
+    <div class="card p-1 flex-grow-1 min-h-0">
         {#if flows.flows.length == 0}
             <div class="d-flex justify-content-center">
                 <div class="spinner-border my-5" role="status">
@@ -255,7 +250,7 @@
                     {/if}
                     {#each flows.flows as flow, index (index)}
                         {#if tickInfo.tickNumber > 0}
-                            {@const startTs = Math.floor(Date.parse(ctfConfig.config.start_date + "Z") / 1000)}
+                            {@const startTs = Math.floor(Date.parse(ctfConfig.config.start_date) / 1000)}
                             {@const tick = Math.floor((Number(flow.ts_start) / 1000000 - startTs) / ctfConfig.config.tick_length)}
                             {@const lastTick = index === 0 ? -1 : Math.floor((Number(flows.flows[index - 1].ts_start) / 1000000 - startTs) / ctfConfig.config.tick_length)}
                             {#if tick !== lastTick}
@@ -271,3 +266,9 @@
         {/if}
     </div>
 </div>
+
+<style>
+    :global(.min-h-0) {
+        min-height: 0;
+    }
+</style>

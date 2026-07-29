@@ -1,7 +1,5 @@
 Dockerfile
 README.md
-.npmrc
-.prettierrc
 .eslintrc.cjs
 .graphqlrc
 .editorconfig
@@ -11,4 +9,3 @@ node_modules
 build
 package
 .env
-ctf_config.json

@@ -16,6 +16,13 @@ CREATE TABLE "flow" (
     CONSTRAINT "flow_pkey" PRIMARY KEY ("id")
 );
 
+CREATE INDEX "flow_ts_start_idx" ON "flow"("ts_start" DESC);
+CREATE INDEX "flow_app_proto_idx" ON "flow"("app_proto");
+CREATE INDEX "flow_src_ipport_idx" ON "flow"("src_ipport");
+CREATE INDEX "flow_dest_ipport_idx" ON "flow"("dest_ipport");
+CREATE INDEX "flow_ts_start_dest_ipport_idx" ON "flow"("ts_start", "dest_ipport");
+CREATE INDEX "flow_app_proto_src_ipport_dest_ipport" ON "flow"("app_proto", "src_ipport", "dest_ipport");
+
 -- CreateTable
 CREATE TABLE "other_event" (
     "id" SERIAL NOT NULL,
@@ -27,6 +34,11 @@ CREATE TABLE "other_event" (
     CONSTRAINT "other_event_pkey" PRIMARY KEY ("id")
 );
 
+CREATE INDEX "other_event_flow_id_idx" ON "other_event"("flow_id");
+CREATE INDEX "other_event_flow_id_event_type_idx" ON "other_event"("flow_id", "event_type");
+CREATE UNIQUE INDEX "other_event_flow_id_event_type_timestamp_key" ON "other_event"("flow_id", "event_type", "timestamp");
+
+
 -- CreateTable
 CREATE TABLE "stats" (
     "id" SERIAL NOT NULL,
@@ -35,6 +47,8 @@ CREATE TABLE "stats" (
 
     CONSTRAINT "stats_pkey" PRIMARY KEY ("id")
 );
+
+CREATE INDEX "stats_timestamp_idx" ON "stats"("timestamp" DESC);
 
 -- CreateTable
 CREATE TABLE "alert" (
@@ -48,6 +62,11 @@ CREATE TABLE "alert" (
     CONSTRAINT "alert_pkey" PRIMARY KEY ("id")
 );
 
+CREATE INDEX "alert_tag_idx" ON "alert"("tag");
+CREATE INDEX "alert_flow_id_idx" ON "alert"("flow_id");
+CREATE UNIQUE INDEX "alert_flow_id_tag_key" ON "alert"("flow_id", "tag");
+CREATE INDEX "alert_tag_flow_id_idx" ON "alert"("tag", "flow_id");
+
 -- CreateTable
 CREATE TABLE "raw" (
     "id" SERIAL NOT NULL,
@@ -59,6 +78,9 @@ CREATE TABLE "raw" (
     CONSTRAINT "raw_pkey" PRIMARY KEY ("id")
 );
 
+CREATE INDEX "raw_flow_id_idx" ON "raw"("flow_id");
+CREATE UNIQUE INDEX "raw_flow_id_count_key" ON "raw"("flow_id", "count");
+
 -- CreateTable
 CREATE TABLE "filedata" (
     "sha256" BYTEA NOT NULL,
@@ -66,36 +88,3 @@ CREATE TABLE "filedata" (
 
     CONSTRAINT "filedata_pkey" PRIMARY KEY ("sha256")
 );
-
--- CreateIndex
-CREATE INDEX "flow_ts_start_idx" ON "flow"("ts_start");
-
--- CreateIndex
-CREATE INDEX "flow_app_proto_idx" ON "flow"("app_proto");
-
--- CreateIndex
-CREATE INDEX "flow_src_ipport_idx" ON "flow"("src_ipport");
-
--- CreateIndex
-CREATE INDEX "flow_dest_ipport_idx" ON "flow"("dest_ipport");
-
--- CreateIndex
-CREATE INDEX "other_event_flow_id_idx" ON "other_event"("flow_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "other_event_flow_id_event_type_timestamp_key" ON "other_event"("flow_id", "event_type", "timestamp");
-
--- CreateIndex
-CREATE INDEX "alert_tag_idx" ON "alert"("tag");
-
--- CreateIndex
-CREATE INDEX "alert_flow_id_idx" ON "alert"("flow_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "alert_flow_id_tag_key" ON "alert"("flow_id", "tag");
-
--- CreateIndex
-CREATE INDEX "raw_flow_id_idx" ON "raw"("flow_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "raw_flow_id_count_key" ON "raw"("flow_id", "count");

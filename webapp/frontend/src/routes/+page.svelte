@@ -11,9 +11,7 @@
 	import { onMount } from 'svelte';
 
 
-    let innerHeight = $state(0);
-    let tickProgressBarHeight = $state(0);
-    let panelsHeight = $derived(innerHeight - tickProgressBarHeight);
+	let { data } = $props();
 
     let tags: Tag[] = $state([]);
     let appProto: string[] = $state([]);
@@ -92,32 +90,34 @@
         }, ctfConfig.refreshRate * 1000);
     });
 
+    let grafanaURL: string | null = $state(null);
+    
     onMount(async () => {
         getFlowsList();
 
+        grafanaURL = window.location.origin.replace(window.location.port, "8001");
+        
         const res = await fetch("/api/config");
         ctfConfig.config = await res.json();
     });
 </script>
 
-<svelte:window bind:innerHeight />
-
 <svelte:document onkeydown={flowsSelection} />
 
-<div class="vstack vh-100 p-2">
-    <div class="hstack gap-2 pb-2" style="height: {panelsHeight}px;">
+<div class="overflow-hidden d-flex flex-column vh-100 p-2">
+    <div class="overflow-hidden d-flex gap-2 pb-2 flex-grow-1 min-h-0">
         {#if !ctfConfig.hideSideBar}
-            <div class="pb-3 h-100">
+            <div class="flex-shrink-0 w-25 min-h-0">
                 <!-- Side bar -->
                 <SideBar tags={tags} appProto={appProto} />
             </div>
         {/if}
-        <div class="col-{ctfConfig.hideSideBar ? "12" : "9"} h-100 overflow-y-auto">
+        <div class="flex-grow-1 min-h-0 overflow-y-auto overflow-x-hidden">
             {#if selectedPanel.view === "ServicesManager"}
                 <!-- Manage services -->
                 <ServicesManager />
             {:else if selectedPanel.view === "Settings"}
-                <Settings />
+                <Settings formData={data.settingsForm} />
             {:else if selectedPanel.view === "WiregasmSettings"}
                 <WiregasmSettings />
             {:else}
@@ -126,20 +126,30 @@
                     <FlowDisplay />
                 {:else}
                     <!-- Welcome section, shown only when no flows are selected -->
-                    <WelcomePanel />
+                    <div class="position-relative top-50">
+                        <WelcomePanel />
+                        
+                    </div>
                 {/if}
             {/if}
         </div>
     </div>
-    <div class="fixed-bottom p-2 hstack gap-2" bind:clientHeight={tickProgressBarHeight}>
+    <div class="hstack gap-2 flex-shrink-0">
         <!-- Progress bar per tick -->
         <TickProgressBar />
         {#if ctfConfig.ctfEnded}
             <button class="col-2 btn btn-outline-danger">THE CTF IS OVER</button>
         {/if}
         <div class="btn-group" role="group" aria-label="Basic example">
+            <a class="btn btn-primary" title="Grafana" href={grafanaURL} target="_blank" aria-label="Grafana"><i class="bi bi-graph-up"></i></a>
             <button onclick={() => selectedPanel.view = "Settings"} type="button" class="btn btn-primary" title="Settings" aria-label="Settings"><i class="bi bi-gear-fill"></i></button>
             <button onclick={() => selectedPanel.view = "WiregasmSettings"} type="button" class="btn btn-secondary" title="Wiregasm Dissector Settings" aria-label="Wiregasm settings"><i class="bi bi-shield-fill-check"></i></button>
         </div>
     </div>
 </div>
+
+<style>
+    :global(.min-h-0) {
+        min-height: 0;
+    }
+</style>

@@ -89,7 +89,7 @@
         }
     }
 
-    function selectAvailableTag(e: any) {
+    function selectAvailableTag(e: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }) {
         if (shiftPressed) {
             flowsFilters.tags_deny.push(e.currentTarget.value);
         }
@@ -97,7 +97,7 @@
             flowsFilters.tags_require.push(e.currentTarget.value);
         }
     }
-    function selectRequiredTag(e: any) {
+    function selectRequiredTag(e: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }) {
         if (shiftPressed) {
             flowsFilters.tags_deny.push(e.currentTarget.value);
         }
@@ -105,7 +105,7 @@
         const index = flowsFilters.tags_require.indexOf(e.currentTarget.value);
         flowsFilters.tags_require.splice(index, 1);
     }
-    function selectDeniedTag(e: any) {
+    function selectDeniedTag(e: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }) {
         if (shiftPressed) {
             flowsFilters.tags_require.push(e.currentTarget.value);
         }

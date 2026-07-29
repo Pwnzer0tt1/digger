@@ -86,6 +86,10 @@ services:
       - "./suricata/output:/suricata/output:ro"
       - "./config:/config:rw"
       - ./webapp/backend/src:/backend/src:ro
+      - ./webapp/backend/benches:/backend/benches:ro
+      - ./webapp/backend/migrations:/backend/migrations:ro
+      - ./webapp/backend/Cargo.toml:/backend/Cargo.toml:ro
+      - ./webapp/backend/diesel.toml:/backend/diesel.toml:ro
     ports:
       - "8000:8000"
     depends_on:

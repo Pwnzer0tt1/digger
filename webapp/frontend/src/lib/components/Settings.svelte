@@ -87,7 +87,7 @@
                 {/if}
             </div>
             <div class="mb-3">
-                <label for="refresh-rate" class="form-label">Refresh rate (s) <strong>Note: this setting is client specific, others users will NOT use your same refresh rate.</strong></label>
+                <label for="refresh-rate" class="form-label">Refresh rate (s) <strong>Note: this setting is client specific, other users will NOT use your same refresh rate.</strong></label>
                 <input type="number" name="refresh_rate" bind:value={$form.refresh_rate} {...$constraints.refresh_rate} class="form-control" id="refresh-rate">
                 {#if $errors.refresh_rate}
                     <span class="text-danger">{$errors.refresh_rate}</span>

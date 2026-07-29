@@ -63,11 +63,4 @@ diesel::table! {
     }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(
-    alert,
-    filedata,
-    flow,
-    other_event,
-    raw,
-    stats,
-);
+diesel::allow_tables_to_appear_in_same_query!(alert, filedata, flow, other_event, raw, stats,);

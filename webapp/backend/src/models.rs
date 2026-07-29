@@ -34,6 +34,20 @@ pub struct Flow {
     pub data: Vec<u8>
 }
 
+#[derive(Queryable, Selectable, Serialize, Identifiable)]
+#[diesel(table_name = flow)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct FlowNoData {
+    pub id: i64,
+    pub ts_start: i64,
+    pub ts_end: i64,
+    pub src_ipport: String,
+    pub dest_port: Option<i32>,
+    pub dest_ipport: String,
+    pub proto: String,
+    pub app_proto: Option<String>
+}
+
 #[derive(Queryable, Selectable, Serialize)]
 #[diesel(table_name = other_event)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -60,6 +74,7 @@ pub struct Tag {
 
 #[derive(Queryable, Selectable, Serialize, Associations, Identifiable)]
 #[diesel(belongs_to(Flow))]
+#[diesel(belongs_to(FlowNoData, foreign_key = flow_id))]
 #[diesel(table_name = alert)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FlowTag {

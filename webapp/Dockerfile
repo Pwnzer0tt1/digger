@@ -8,7 +8,7 @@ EXPOSE 5173
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
 # Dev container for backend
-FROM rust:1.93-alpine3.23 AS backend-dev
+FROM rust:1.97-alpine3.23 AS backend-dev
 
 WORKDIR /backend
 RUN apk add --no-cache musl-dev libpq-dev watchexec
@@ -27,7 +27,7 @@ COPY ./frontend .
 RUN npm run build
 
 # Build backend prod stage
-FROM rust:1.93-alpine3.23 AS backend-prod
+FROM rust:1.97-alpine3.23 AS backend-prod
 
 WORKDIR /backend
 RUN apk add --no-cache musl-dev libpq-dev

@@ -3,7 +3,7 @@ use actix_files::NamedFile;
 use actix_web::{get, web, HttpRequest, HttpResponse, Responder, Result};
 use diesel::{prelude::*, r2d2::ConnectionManager, sql_query, sql_types::Text};
 use std::{fs, sync::Mutex};
-use crate::{config::CtfConfig, models::{Alert, Event, Flow, FlowTag, RawFlowID, ReadFlowRaw, Tag}, schema};
+use crate::{config::CtfConfig, models::{Alert, Event, Flow, FlowNoData, FlowTag, RawFlowID, ReadFlowRaw, Tag}, schema};
 
 
 #[derive(Serialize)]
@@ -55,7 +55,7 @@ pub struct FlowsList {
 #[derive(Serialize)]
 pub struct FlowWithAlerts {
     #[serde(flatten)]
-    pub flow: Flow,
+    pub flow: FlowNoData,
     pub alerts: Vec<FlowTag>
 }
 
@@ -184,7 +184,7 @@ async fn read_flows(query: web::Query<FlowsQuery>, ctf_config: web::Data<Mutex<C
         }
     
         let flows = flows_query
-            .select(Flow::as_select())
+            .select(FlowNoData::as_select())
             .limit(100)
             .order_by(schema::flow::ts_start.desc())
             .load(&mut conn)?;
